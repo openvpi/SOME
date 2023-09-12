@@ -2,16 +2,12 @@ from __future__ import annotations
 
 import pathlib
 import re
-import time
 import types
 from collections import OrderedDict
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 
-from basics.base_module import CategorizedModule
-from utils.hparams import hparams
 from utils.training_utils import get_latest_checkpoint_path
 
 
@@ -163,8 +159,6 @@ def load_ckpt(
     assert len(checkpoint_path) > 0, f'| ckpt not found in {ckpt_base_dir}.'
     checkpoint_path = checkpoint_path[-1]
     ckpt_loaded = torch.load(checkpoint_path, map_location=device)
-    if isinstance(cur_model, CategorizedModule):
-        cur_model.check_category(ckpt_loaded.get('category'))
     if key_in_ckpt is None:
         state_dict = ckpt_loaded
     else:
