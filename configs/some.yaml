@@ -1,4 +1,5 @@
 # preprocessing
+binarizer_cls: null
 raw_data_dir: []
 binary_data_dir: null
 pe: rmvpe
@@ -7,6 +8,7 @@ pe_ckpt: pretrained/rmvpe/model.pt
 # neural networks
 
 # training
+task_cls: training.MIDIExtractionTask
 optimizer_args:
   optimizer_cls: torch.optim.AdamW
   lr: 0.0004

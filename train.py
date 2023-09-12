@@ -1,3 +1,4 @@
+import importlib
 import logging
 import os
 import pathlib
@@ -45,7 +46,13 @@ def train(config, exp_name, work_dir):
         os.environ['NCCL_P2P_DISABLE'] = '1'
 
     pl.seed_everything(config['seed'], workers=True)
-    task = training.MIDIExtractionTask(config)
+    assert config['task_cls'] != ''
+    pkg = ".".join(config["task_cls"].split(".")[:-1])
+    cls_name = config["task_cls"].split(".")[-1]
+    task_cls = getattr(importlib.import_module(pkg), cls_name)
+    assert issubclass(task_cls, training.BaseTask), f'Task class {task_cls} is not a subclass of {training.BaseTask}.'
+
+    task = task_cls(config=config)
 
     # work_dir = pathlib.Path(config['work_dir'])
     trainer = pl.Trainer(
