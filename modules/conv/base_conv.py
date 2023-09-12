@@ -67,5 +67,5 @@ class conform_conv(nn.Module):
         x=self.norm(x)
         x=self.act2(x)
         x=self.pointwise_conv2(x)
-        return self.drop(x)
+        return self.drop(x).transpose(1,2)
 

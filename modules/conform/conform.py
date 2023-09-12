@@ -44,6 +44,7 @@ class conform_blocke(nn.Module):
         self.norm5 = nn.LayerNorm(dim)
     def forward(self,x):
         x=self.ffn1(self.norm1(x))*0.5 + x
+
         x=self.attdrop(self.att(self.norm2(x)))+x
         x=self.conv(self.norm3(x))+x
         x = self.ffn2(self.norm4(x)) * 0.5 + x
@@ -66,6 +67,7 @@ class midi_conform(nn.Module):
 
     def forward(self,x):
         layskip=0
+        x=self.inln(x)
         for idx,i in enumerate(self.cf_lay):
             x=i(x)
             if self.use_lay_skip:
@@ -79,6 +81,8 @@ class midi_conform(nn.Module):
             midiout = self.outln(x)
         cutprp=torch.sigmoid(cutprp)
         return midiout,cutprp
+
+
 
 
 
