@@ -1,33 +1,26 @@
 import logging
 import os
 import pathlib
-import shutil
 import sys
-from datetime import datetime
 from typing import Dict
 
 import matplotlib
 
 import utils
-from utils.text_encoder import TokenTextEncoder
 
 matplotlib.use('Agg')
 
 import torch.utils.data
 from torchmetrics import Metric, MeanMetric
 import lightning.pytorch as pl
-from lightning.pytorch.callbacks import LearningRateMonitor
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.utilities.rank_zero import rank_zero_debug, rank_zero_info, rank_zero_only
 
-from basics.base_module import CategorizedModule
-from utils.hparams import hparams
 from utils.training_utils import (
     DsModelCheckpoint, DsTQDMProgressBar,
     DsBatchSampler, DsEvalBatchSampler,
     get_latest_checkpoint_path, get_strategy
 )
-from utils.phoneme_utils import locate_dictionary, build_phoneme_list
 
 torch.multiprocessing.set_sharing_strategy(os.getenv('TORCH_SHARE_STRATEGY', 'file_system'))
 
@@ -432,37 +425,7 @@ class BaseTask(pl.LightningModule):
             num_sanity_val_steps=hparams['num_sanity_val_steps'],
             accumulate_grad_batches=hparams['accumulate_grad_batches']
         )
-        if not hparams['infer']:  # train
-            @rank_zero_only
-            def train_payload_copy():
-                # copy_code = input(f'{hparams["save_codes"]} code backup? y/n: ') == 'y'
-                copy_code = True  # backup code every time
-                if copy_code:
-                    code_dir = work_dir / 'codes' / datetime.now().strftime('%Y%m%d%H%M%S')
-                    code_dir.mkdir(exist_ok=True, parents=True)
-                    for c in hparams['save_codes']:
-                        shutil.copytree(c, code_dir / c, dirs_exist_ok=True)
-                    print(f'| Copied codes to {code_dir}.')
-                # Copy spk_map.json and dictionary.txt to work dir
-                binary_dir = pathlib.Path(hparams['binary_data_dir'])
-                spk_map = work_dir / 'spk_map.json'
-                spk_map_src = binary_dir / 'spk_map.json'
-                if not spk_map.exists() and spk_map_src.exists():
-                    shutil.copy(spk_map_src, spk_map)
-                    print(f'| Copied spk map to {spk_map}.')
-                dictionary = work_dir / 'dictionary.txt'
-                dict_src = binary_dir / 'dictionary.txt'
-                if not dictionary.exists():
-                    if dict_src.exists():
-                        shutil.copy(dict_src, dictionary)
-                    else:
-                        shutil.copy(locate_dictionary(), dictionary)
-                    print(f'| Copied dictionary to {dictionary}.')
-
-            train_payload_copy()
-            trainer.fit(task, ckpt_path=get_latest_checkpoint_path(work_dir))
-        else:
-            trainer.test(task)
+        trainer.fit(task, ckpt_path=get_latest_checkpoint_path(work_dir))
 
     def on_save_checkpoint(self, checkpoint):
         if isinstance(self.model, CategorizedModule):
