@@ -8,7 +8,7 @@ from utils import print_config
 
 @click.command(help='Process the raw dataset into binary dataset')
 @click.option('--config', required=True, metavar='FILE', help='Path to the configuration file')
-def preprocess(config):
+def binarize(config):
     config = pathlib.Path(config)
     with open(config, 'r', encoding='utf8') as f:
         config = yaml.safe_load(f)
@@ -16,4 +16,4 @@ def preprocess(config):
 
 
 if __name__ == '__main__':
-    preprocess()
+    binarize()

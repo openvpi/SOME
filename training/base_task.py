@@ -4,27 +4,74 @@ import pathlib
 import sys
 from typing import Dict
 
+import lightning.pytorch as pl
 import matplotlib
+import numpy as np
+import torch.utils.data
+from lightning.pytorch.utilities.rank_zero import rank_zero_debug, rank_zero_info, rank_zero_only
+from torch.utils.data import Dataset
+from torchmetrics import Metric, MeanMetric
 
 import utils
-
-matplotlib.use('Agg')
-
-import torch.utils.data
-from torchmetrics import Metric, MeanMetric
-import lightning.pytorch as pl
-from lightning.pytorch.utilities.rank_zero import rank_zero_debug, rank_zero_info, rank_zero_only
-
+from utils.indexed_datasets import IndexedDataset
 from utils.training_utils import (
     DsBatchSampler, DsEvalBatchSampler,
     get_latest_checkpoint_path
 )
+
+matplotlib.use('Agg')
 
 torch.multiprocessing.set_sharing_strategy(os.getenv('TORCH_SHARE_STRATEGY', 'file_system'))
 
 log_format = '%(asctime)s %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=log_format, datefmt='%m/%d %I:%M:%S %p')
+
+
+class BaseDataset(Dataset):
+    """
+        Base class for datasets.
+        1. *sizes*:
+            clipped length if "max_frames" is set;
+        2. *num_frames*:
+            unclipped length.
+
+        Subclasses should define:
+        1. *collate*:
+            take the longest data, pad other data to the same length;
+        2. *__getitem__*:
+            the index function.
+    """
+
+    def __init__(self, data_dir, prefix):
+        super().__init__()
+        self.prefix = prefix
+        self.data_dir = data_dir if isinstance(data_dir, pathlib.Path) else pathlib.Path(data_dir)
+        self.sizes = np.load(self.data_dir / f'{self.prefix}.lengths')
+        self.indexed_ds = IndexedDataset(self.data_dir, self.prefix)
+
+    @property
+    def _sizes(self):
+        return self.sizes
+
+    def __getitem__(self, index):
+        return self.indexed_ds[index]
+
+    def __len__(self):
+        return len(self._sizes)
+
+    def num_frames(self, index):
+        return self.size(index)
+
+    def size(self, index):
+        """Return an example's size as a float or tuple. This value is used when
+        filtering a dataset with ``--max-positions``."""
+        return self._sizes[index]
+
+    def collater(self, samples):
+        return {
+            'size': len(samples)
+        }
 
 
 class BaseTask(pl.LightningModule):
@@ -78,7 +125,8 @@ class BaseTask(pl.LightningModule):
         self.unfreeze_all_params()
         if self.config['freezing_enabled']:
             self.freeze_params()
-        if self.config['finetune_enabled'] and get_latest_checkpoint_path(pathlib.Path(self.config['work_dir'])) is None:
+        if self.config['finetune_enabled'] and get_latest_checkpoint_path(
+                pathlib.Path(self.config['work_dir'])) is None:
             self.load_finetune_ckpt(self.load_pre_train_model())
         self.print_arch()
         self.build_losses_and_metrics()
@@ -98,7 +146,7 @@ class BaseTask(pl.LightningModule):
         freeze_key = self.get_need_freeze_state_dict_key(model_state_dict=model_state_dict)
 
         for i in freeze_key:
-            params=self.get_parameter(i)
+            params = self.get_parameter(i)
 
             params.requires_grad = False
 
@@ -391,9 +439,10 @@ class BaseTask(pl.LightningModule):
                 num_param_groups=len(checkpoint['optimizer_states'][0]['param_groups'])
             )
             for param_group, new_lr in zip(
-                checkpoint['optimizer_states'][0]['param_groups'],
-                checkpoint['lr_schedulers'][0]['_last_lr'],
+                    checkpoint['optimizer_states'][0]['param_groups'],
+                    checkpoint['lr_schedulers'][0]['_last_lr'],
             ):
                 if param_group['lr'] != new_lr:
-                    rank_zero_info(f'| Overriding optimizer parameter lr from checkpoint: {param_group["lr"]} -> {new_lr}')
+                    rank_zero_info(
+                        f'| Overriding optimizer parameter lr from checkpoint: {param_group["lr"]} -> {new_lr}')
                     param_group['lr'] = new_lr
