@@ -1,0 +1,35 @@
+preprocessing:
+  raw_data_dir: []
+  binary_data_dir: null
+
+training:
+  optimizer_args:
+    optimizer_cls: torch.optim.AdamW
+    lr: 0.0004
+    beta1: 0.9
+    beta2: 0.98
+    weight_decay: 0
+  lr_scheduler_args:
+    scheduler_cls: torch.optim.lr_scheduler.StepLR
+    step_size: 50000
+    gamma: 0.5
+
+  max_batch_size: 48
+  max_batch_frames: 80000
+  num_ckpt_keep: 5
+  accumulate_grad_batches: 1
+  log_interval: 100
+  num_sanity_val_steps: 1  # steps of validation at the beginning
+  val_check_interval: 2000
+  max_updates: 120000
+  num_valid_plots: 10
+  ###########
+  # pytorch lightning
+  # Read https://lightning.ai/docs/pytorch/stable/common/trainer.html#trainer-class-api for possible values
+  ###########
+  pl_trainer_accelerator: 'auto'
+  pl_trainer_devices: 'auto'
+  pl_trainer_precision: '32-true'
+  pl_trainer_num_nodes: 1
+  pl_trainer_strategy: 'auto'
+  ddp_backend: 'nccl' # choose from 'gloo', 'nccl', 'nccl_no_p2p'
