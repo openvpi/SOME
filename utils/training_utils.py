@@ -14,36 +14,9 @@ from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data.distributed import Sampler
 
 import utils
-from utils.hparams import hparams
 
 
 # ==========LR schedulers==========
-
-class RSQRTSchedule(object):
-    def __init__(self, optimizer):
-        super().__init__()
-        self.optimizer = optimizer
-        self.constant_lr = hparams['lr']
-        self.warmup_updates = hparams['warmup_updates']
-        self.hidden_size = hparams['hidden_size']
-        self.lr = hparams['lr']
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = self.lr
-        self.step(0)
-
-    def step(self, num_updates):
-        constant_lr = self.constant_lr
-        warmup = min(num_updates / self.warmup_updates, 1.0)
-        rsqrt_decay = max(self.warmup_updates, num_updates) ** -0.5
-        rsqrt_hidden = self.hidden_size ** -0.5
-        self.lr = max(constant_lr * warmup * rsqrt_decay * rsqrt_hidden, 1e-7)
-        for param_group in self.optimizer.param_groups:
-            param_group['lr'] = self.lr
-        return self.lr
-
-    def get_lr(self):
-        return self.optimizer.param_groups[0]['lr']
-
 
 class WarmupCosineSchedule(LambdaLR):
     """ Linear warmup and then cosine decay.
@@ -72,7 +45,7 @@ class WarmupCosineSchedule(LambdaLR):
 
 class DsBatchSampler(Sampler):
     def __init__(self, dataset, max_batch_frames, max_batch_size, sub_indices=None,
-                 num_replicas=None, rank=None,
+                 num_replicas=None, rank=None, frame_count_grid=200,
                  required_batch_count_multiple=1, batch_by_size=True, sort_by_similar_size=True,
                  shuffle_sample=False, shuffle_batch=False, seed=0, drop_last=False) -> None:
         self.dataset = dataset
@@ -81,6 +54,7 @@ class DsBatchSampler(Sampler):
         self.sub_indices = sub_indices
         self.num_replicas = num_replicas
         self.rank = rank
+        self.frame_count_grid = frame_count_grid
         self.required_batch_count_multiple = required_batch_count_multiple
         self.batch_by_size = batch_by_size
         self.sort_by_similar_size = sort_by_similar_size
@@ -104,7 +78,7 @@ class DsBatchSampler(Sampler):
                 indices = rng.permutation(len(self.dataset))
 
             if self.sort_by_similar_size:
-                grid = int(hparams.get('sampler_frame_count_grid', 200))
+                grid = self.frame_count_grid
                 assert grid > 0
                 sizes = (np.round(np.array(self.dataset._sizes)[indices] / grid) * grid).clip(grid, None).astype(
                     np.int64)
