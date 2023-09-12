@@ -27,11 +27,11 @@ class conform_ffn(nn.Module):
 
 
 class conform_blocke(nn.Module):
-    def __init__(self, dim: int, kernel_size: int = 31, conv_drop: float = 0.1, ffn_lantent_drop: float = 0.1,
+    def __init__(self, dim: int, kernel_size: int = 31, conv_drop: float = 0.1, ffn_latent_drop: float = 0.1,
                  ffn_out_drop: float = 0.1, attention_drop: float = 0.1,attention_heads:int=4,attention_heads_dim:int=64):
         super().__init__()
-        self.ffn1 = conform_ffn(dim, ffn_lantent_drop, ffn_out_drop)
-        self.ffn2 = conform_ffn(dim, ffn_lantent_drop, ffn_out_drop)
+        self.ffn1 = conform_ffn(dim, ffn_latent_drop, ffn_out_drop)
+        self.ffn2 = conform_ffn(dim, ffn_latent_drop, ffn_out_drop)
         self.att = Attention(dim, heads=attention_heads, dim_head=attention_heads_dim)
         self.attdrop = nn.Dropout(attention_drop) if attention_drop > 0. else nn.Identity()
         self.conv = conform_conv(dim, kernel_size=kernel_size,
@@ -51,23 +51,27 @@ class conform_blocke(nn.Module):
         return self.norm5(x)
 
 class midi_conform(nn.Module):
-    def __init__(self,lay:int,dim:int,indim:int,outtype:int,use_lay_skip:bool,kernel_size = 31,conv_drop=0.1,ffn_lantent_drop = 0.1,
+    def __init__(self,lay:int,dim:int,indim:int,outtype:int,use_lay_skip:bool,kernel_size = 31,conv_drop=0.1,ffn_latent_drop = 0.1,
                  ffn_out_drop = 0.1, attention_drop= 0.1,attention_heads=4,attention_heads_dim=64):
         super().__init__()
+        self.pitch_embed = nn.Linear(1, indim)
         self.inln=nn.Linear(indim,dim)
         self.outln=nn.Linear(dim,outtype)
         self.cutheard=nn.Linear(dim,1)
         self.lay=lay
         self.use_lay_skip=use_lay_skip
-        self.cf_lay=nn.ModuleList([conform_blocke(dim=dim, kernel_size = kernel_size, conv_drop = conv_drop, ffn_lantent_drop =ffn_lantent_drop,
+        self.cf_lay=nn.ModuleList([conform_blocke(dim=dim, kernel_size = kernel_size, conv_drop = conv_drop, ffn_latent_drop =ffn_latent_drop,
                  ffn_out_drop = ffn_out_drop, attention_drop= attention_drop,attention_heads=attention_heads,attention_heads_dim=attention_heads_dim) for _ in range(lay)])
         if use_lay_skip:
             self.skip_lay = nn.ModuleList([nn.Sequential(nn.Linear(dim,dim),nn.SiLU()) for _ in range(lay)])
             self.lay_sc=1/sqrt(lay)
 
-    def forward(self,x):
+    def forward(self,x,f0,mask=None):
         layskip=0
-        x=self.inln(x)
+        # torch.masked_fill()
+        x=self.inln(x+self.pitch_embed((1 + f0 / 700).log()))
+        if mask is not None:
+            x=x.masked_fill(mask,0)
         for idx,i in enumerate(self.cf_lay):
             x=i(x)
             if self.use_lay_skip:

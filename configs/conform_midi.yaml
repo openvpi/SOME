@@ -2,7 +2,7 @@
 
 
 
-midi_extractor_arg:
+midi_extractor_args:
   lay: 6
   dim: 512
   indim: 768
