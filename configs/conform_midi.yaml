@@ -10,7 +10,7 @@ midi_extractor_args:
   use_lay_skip: false
   kernel_size: 31
   conv_drop: 0.1
-  ffn_lantent_drop: 0.1
+  ffn_latent_drop: 0.1
   ffn_out_drop: 0.1
   attention_drop: 0.1
   attention_heads: 8
