@@ -1,0 +1,17 @@
+
+
+
+
+midi_extractor_arg:
+  lay: 6
+  dim: 512
+  indim: 768
+  outtype: 128
+  use_lay_skip: false
+  kernel_size: 31
+  conv_drop: 0.1
+  ffn_lantent_drop: 0.1
+  ffn_out_drop: 0.1
+  attention_drop: 0.1
+  attention_heads: 8
+  attention_heads_dim: 64
