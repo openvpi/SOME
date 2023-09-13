@@ -85,17 +85,17 @@ class MIDIExtractionTask(BaseTask):
             2. calculate losses if not infer
         """
         spec = sample['units']  # [B, T_ph]
-        target = (sample['probs'],sample['bounds'])  # [B, T_s, M]
+        # target = (sample['probs'],sample['bounds'])  # [B, T_s, M]
         mask = sample['unit2note'] > 0
 
         f0 = sample['pitch']
-        output=self.model(x=spec,f0=f0,mask=mask)
+        prid_probs,bounds=self.model(x=spec,f0=f0,mask=mask)
 
         if infer:
-            return output
+            return (prid_probs,bounds)
         else:
             losses = {}
-            midi_loss,bound_loss=self.midiloss(output,target)
+            midi_loss,bound_loss=self.midiloss((prid_probs,bounds),(sample['probs'],sample['bounds']))
 
 
 
