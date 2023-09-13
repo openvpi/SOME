@@ -44,8 +44,8 @@ class MIDIExtractionDataset(BaseDataset):
         probs = ((x - miu) / self.sigma).pow(2).div(-2).exp()  # gaussian blur, [B, T_n, N]
         note_mask = collate_nd([torch.ones_like(s['note_rest']) for s in samples], pad_value=False)
         probs *= (note_mask[..., None] & ~batch['note_rest'][..., None])
-        probs = F.pad(probs, [0, 0, 1, 0])
 
+        probs = F.pad(probs, [0, 0, 1, 0])
         unit2note = collate_nd([s['unit2note'] for s in samples])
         unit2note_ = unit2note[..., None].repeat([1, 1, self.num_bins])
         probs = torch.gather(probs, 1, unit2note_)
@@ -119,7 +119,7 @@ class MIDIExtractionTask(BaseTask):
 
             unit2note_pred = decode_bounds_to_sequence(bounds) * masks
             dur_pred = unit2note_pred.new_zeros(1, unit2note_pred.max() + 1).scatter_add(
-                dim=1, index=unit2note_pred, src=unit2note_pred
+                dim=1, index=unit2note_pred, src=torch.ones_like(unit2note_pred)
             )[:, 1:]
             self.plot_boundary(
                 batch_idx, bounds_gt=sample['bounds'], bounds_pred=bounds,
@@ -130,10 +130,10 @@ class MIDIExtractionTask(BaseTask):
                 probs, vmin=self.midi_min, vmax=self.midi_max,
                 deviation=self.midi_deviation, threshold=self.rest_threshold
             )
-            midi_pred[rest_pred] = -1  # rest part is set to -1
+            midi_pred[rest_pred] = -torch.inf  # rest part is set to -inf
             note_midi_gt = sample['note_midi'].clone()
-            note_midi_gt[sample['note_rest']] = -1
-            midi_gt = torch.gather(note_midi_gt, 1, unit2note_gt)
+            note_midi_gt[sample['note_rest']] = -torch.inf
+            midi_gt = torch.gather(F.pad(note_midi_gt, [1, 0]), 1, unit2note_gt)
             self.plot_midi_curve(
                 batch_idx, midi_gt=midi_gt, midi_pred=midi_pred, pitch=sample['pitch']
             )
@@ -144,7 +144,7 @@ class MIDIExtractionTask(BaseTask):
     # validation plots
     ############
     def plot_boundary(self, batch_idx, bounds_gt, bounds_pred, dur_gt, dur_pred):
-        name = f'boundary_{batch_idx}'
+        name = f'boundary/{batch_idx}'
         bounds_gt = bounds_gt[0].cpu().numpy()
         bounds_pred = bounds_pred[0].cpu().numpy()
         dur_gt = dur_gt[0].cpu().numpy()
@@ -154,7 +154,7 @@ class MIDIExtractionTask(BaseTask):
         ), self.global_step)
 
     def plot_midi_curve(self, batch_idx, midi_gt, midi_pred, pitch):
-        name = f'midi_{batch_idx}'
+        name = f'midi/{batch_idx}'
         midi_gt = midi_gt[0].cpu().numpy()
         midi_pred = midi_pred[0].cpu().numpy()
         pitch = pitch[0].cpu().numpy()
