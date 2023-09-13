@@ -280,10 +280,7 @@ class BaseTask(pl.LightningModule):
         :param batch_idx:
         :return: loss_log: dict, weight: int
         """
-        losses = self.run_model(sample)
-
-        return losses,1
-        # raise NotImplementedError()
+        raise NotImplementedError()
 
     def validation_step(self, sample, batch_idx):
         """

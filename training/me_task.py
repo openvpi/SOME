@@ -42,7 +42,7 @@ class MIDIExtractionDataset(BaseDataset):
         note_mask = collate_nd([torch.ones_like(s['note_rest']) for s in samples], pad_value=False)
         probs *= (note_mask[..., None] & ~batch['note_rest'][..., None])
         probs = F.pad(probs, [0, 0, 1, 0])
-        
+
         unit2note = collate_nd([s['unit2note'] for s in samples])
         unit2note_ = unit2note[..., None].repeat([1, 1, self.num_bins])
         probs = torch.gather(probs, 1, unit2note_)
@@ -106,7 +106,8 @@ class MIDIExtractionTask(BaseTask):
 
             return losses
 
-
         # raise NotImplementedError()
 
-
+    def _validation_step(self, sample, batch_idx):
+        losses = self.run_model(sample)
+        return losses, sample['size']
