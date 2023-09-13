@@ -1,3 +1,5 @@
+import random
+
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -15,15 +17,21 @@ class MIDIExtractionDataset(BaseDataset):
         self.deviation = self.config['midi_prob_deviation']
         self.interval = (self.midi_max - self.midi_min) / (self.num_bins - 1)  # align with centers of bins
         self.sigma = self.deviation / self.interval
+        self.midi_shift_min, self.midi_shift_max = self.config['midi_shift_range']
 
     def midi_to_bin(self, midi):
         return (midi - self.midi_min) / self.interval
 
     def collater(self, samples):
         batch = super().collater(samples)
+        midi_shifts = [
+            random.random() * (self.midi_shift_max - self.midi_shift_min) + self.midi_shift_min
+            if self.allow_aug else 0
+            for _ in range(len(samples))
+        ]
         batch['units'] = collate_nd([s['units'] for s in samples])  # [B, T_s, C]
-        batch['pitch'] = collate_nd([s['pitch'] for s in samples])  # [B, T_s]
-        batch['note_midi'] = collate_nd([s['note_midi'] for s in samples])  # [B, T_n]
+        batch['pitch'] = collate_nd([s['pitch'] + d for s, d in zip(samples, midi_shifts)])  # [B, T_s]
+        batch['note_midi'] = collate_nd([s['note_midi'] + d for s, d in zip(samples, midi_shifts)])  # [B, T_n]
         batch['note_rest'] = collate_nd([s['note_rest'] for s in samples])  # [B, T_n]
         batch['note_dur'] = collate_nd([s['note_dur'] for s in samples])  # [B, T_n]
 
@@ -38,15 +46,11 @@ class MIDIExtractionDataset(BaseDataset):
         unit2note_ = unit2note[..., None].repeat([1, 1, self.num_bins])
         probs = torch.gather(probs, 1, unit2note_)
         batch['probs'] = probs  # [B, T_s, N]
-        batch['mask'] = unit2note > 0
 
-        bound = torch.diff(
+        bounds = torch.diff(
             unit2note, dim=1, prepend=unit2note.new_zeros((batch['size'], 1))
-        )
-        bounds=bound>0
-
-
-        batch['bounds'] = torch.zeros_like(bound,dtype=torch.float).masked_fill(bounds,1)  # [B, T_s]
+        ) > 0
+        batch['bounds'] = bounds.float()  # [B, T_s]
 
         return batch
 
@@ -81,7 +85,7 @@ class MIDIExtractionTask(BaseTask):
         """
         spec = sample['units']  # [B, T_ph]
         target = (sample['probs'],sample['bounds'])  # [B, T_s, M]
-        mask=sample['mask']
+        mask = sample['unit2note'] > 0
 
         f0 = sample['pitch']
         output=self.model(x=spec,f0=f0,mask=mask)
