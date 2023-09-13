@@ -4,12 +4,16 @@ import torch.nn as nn
 class midi_loss(nn.Module):
     def __init__(self):
         super().__init__()
-        self.cut_prob_loss=nn.BCELoss()
-        # self.midiloss
-        #todo
-    def forward(self,x):
+        self.loss=nn.BCELoss()
+
+
+    def forward(self,x,target):
         midiout, cutp=x
-        cutploss=self.cut_prob_loss(x)
+        midi_target, cutp_target = target
+
+        cutploss=self.loss(cutp,cutp_target)
+        midiloss = self.loss(midiout, midi_target)
+        return midiloss,cutploss
 
 
 
@@ -23,5 +27,4 @@ class midi_conform(nn.Module):
     def forward(self,x,f0,mask=None):
         return self.model(x,f0,mask)
     def get_loss(self):
-        pass
-    #todo
+        return midi_loss()
