@@ -40,6 +40,8 @@ def train(config, exp_name, work_dir):
     work_dir = work_dir / exp_name
     assert not work_dir.exists() or work_dir.is_dir(), f'Path \'{work_dir}\' is not a directory.'
     work_dir.mkdir(parents=True, exist_ok=True)
+    with open(work_dir / 'config.yaml', 'w', encoding='utf8') as f:
+        yaml.safe_dump(config)
 
     if config['ddp_backend'] == 'nccl_no_p2p':
         print("Disabling NCCL P2P")
