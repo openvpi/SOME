@@ -5,8 +5,10 @@ import torch.nn.functional as F
 from torch import nn
 
 import modules.losses
-from utils import build_object_from_class_name, collate_nd, infer_utils
+from utils import build_object_from_class_name, collate_nd
 from .base_task import BaseDataset, BaseTask
+from utils.infer_utils import decode_gaussian_blurred_probs, decode_bounds_to_sequence
+from utils.plot import boundary_to_figure, curve_to_figure
 
 
 class MIDIExtractionDataset(BaseDataset):
@@ -15,9 +17,9 @@ class MIDIExtractionDataset(BaseDataset):
         self.midi_min = self.config['midi_min']
         self.midi_max = self.config['midi_max']
         self.num_bins = self.config['midi_num_bins']
-        self.deviation = self.config['midi_prob_deviation']
+        self.midi_deviation = self.config['midi_prob_deviation']
         self.interval = (self.midi_max - self.midi_min) / (self.num_bins - 1)  # align with centers of bins
-        self.sigma = self.deviation / self.interval
+        self.sigma = self.midi_deviation / self.interval
         self.midi_shift_proportion = self.config['midi_shift_proportion']
         self.midi_shift_min, self.midi_shift_max = self.config['midi_shift_range']
 
@@ -59,11 +61,14 @@ class MIDIExtractionDataset(BaseDataset):
 
 # todo
 class MIDIExtractionTask(BaseTask):
-
     def __init__(self, config: dict):
         super().__init__(config)
         self.midiloss = None
         self.dataset_cls = MIDIExtractionDataset
+        self.midi_min = self.config['midi_min']
+        self.midi_max = self.config['midi_max']
+        self.midi_deviation = self.config['midi_prob_deviation']
+        self.rest_threshold = self.config['rest_threshold']
 
     def build_model(self):
 
@@ -74,7 +79,6 @@ class MIDIExtractionTask(BaseTask):
     def build_losses_and_metrics(self):
         self.midi_loss = nn.BCELoss()
         self.bound_loss = modules.losses.BinaryEMDLoss()
-        # self.midiloss = self.model.get_loss()
 
     def run_model(self, sample, infer=False):
         """
@@ -95,7 +99,6 @@ class MIDIExtractionTask(BaseTask):
             losses = {}
             midi_loss = self.midi_loss(probs, sample['probs'])
             bound_loss = self.bound_loss(bounds, sample['bounds'])
-            # midi_loss, bound_loss = self.midiloss((probs, bounds), (sample['probs'], sample['bounds']))
 
             losses['bound_loss'] = bound_loss
 
@@ -109,7 +112,52 @@ class MIDIExtractionTask(BaseTask):
         losses = self.run_model(sample, infer=False)
         if batch_idx < self.config['num_valid_plots']:
             probs, bounds = self.run_model(sample, infer=True)
-            # TODO: draw plots on TensorBoard
-            pass
+            unit2note_gt = sample['unit2note']
+            masks = unit2note_gt > 0
+            probs *= masks[..., None]
+            bounds *= masks
+
+            unit2note_pred = decode_bounds_to_sequence(bounds) * masks
+            dur_pred = unit2note_pred.new_zeros(1, unit2note_pred.max() + 1).scatter_add(
+                dim=1, index=unit2note_pred, src=unit2note_pred
+            )[:, 1:]
+            self.plot_boundary(
+                batch_idx, bounds_gt=sample['bound'], bounds_pred=bounds,
+                dur_gt=sample['note_dur'], dur_pred=dur_pred
+            )
+
+            midi_pred, rest_pred = decode_gaussian_blurred_probs(
+                probs, vmin=self.midi_min, vmax=self.midi_max,
+                deviation=self.midi_deviation, threshold=self.rest_threshold
+            )
+            midi_pred[rest_pred] = -1  # rest part is set to -1
+            note_midi_gt = sample['note_midi'].clone()
+            note_midi_gt[sample['note_rest']] = -1
+            midi_gt = torch.gather(note_midi_gt, 1, unit2note_gt)
+            self.plot_midi_curve(
+                batch_idx, midi_gt=midi_gt, midi_pred=midi_pred, pitch=sample['pitch']
+            )
 
         return losses, sample['size']
+
+    ############
+    # validation plots
+    ############
+    def plot_boundary(self, batch_idx, bounds_gt, bounds_pred, dur_gt, dur_pred):
+        name = f'boundary_{batch_idx}'
+        bounds_gt = bounds_gt[0].cpu().numpy()
+        bounds_pred = bounds_pred[0].cpu().numpy()
+        dur_gt = dur_gt[0].cpu().numpy()
+        dur_pred = dur_pred[0].cpu().numpy()
+        self.logger.experiment.add_figure(name, boundary_to_figure(
+            bounds_gt, bounds_pred, dur_gt, dur_pred
+        ), self.global_step)
+
+    def plot_midi_curve(self, batch_idx, midi_gt, midi_pred, pitch):
+        name = f'midi_{batch_idx}'
+        midi_gt = midi_gt[0].cpu().numpy()
+        midi_pred = midi_pred[0].cpu().numpy()
+        pitch = pitch[0].cpu().numpy()
+        self.logger.experiment.add_figure(name, curve_to_figure(
+            midi_gt, midi_pred, curve_base=pitch, grid=1, base_label='pitch'
+        ), self.global_step)

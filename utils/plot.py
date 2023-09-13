@@ -1,3 +1,5 @@
+import math
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -42,6 +44,28 @@ def dur_to_figure(dur_gt, dur_pred, txt):
     return fig
 
 
+def boundary_to_figure(
+        bounds_gt: np.ndarray, bounds_pred: np.ndarray,
+        dur_gt: np.ndarray = None, dur_pred: np.ndarray = None
+):
+    fig = plt.figure(figsize=(12, 6))
+    bounds_acc_gt = np.cumsum(bounds_gt)
+    bounds_acc_pred = np.cumsum(bounds_pred)
+    plt.plot(bounds_acc_gt, color='b', label='gt')
+    plt.plot(bounds_acc_pred, color='r', label='pred')
+    if dur_gt is not None and dur_pred is not None:
+        height = math.ceil(max(bounds_acc_gt[-1], bounds_acc_pred[-1]))
+        dur_acc_gt = np.cumsum(dur_gt)
+        dur_acc_pred = np.cumsum(dur_pred)
+        plt.vlines(dur_acc_gt[:-1], 0, height / 2, colors='b', linestyles='--')
+        plt.vlines(dur_acc_pred[:-1], height / 2, height, colors='r', linestyles='--')
+    plt.gca().yaxis.set_major_locator(MultipleLocator(1))
+    plt.grid(axis='y')
+    plt.legend()
+    plt.tight_layout()
+    return fig
+
+
 def pitch_note_to_figure(pitch_gt, pitch_pred=None, note_midi=None, note_dur=None, note_rest=None):
     if isinstance(pitch_gt, torch.Tensor):
         pitch_gt = pitch_gt.cpu().numpy()
@@ -79,7 +103,7 @@ def pitch_note_to_figure(pitch_gt, pitch_pred=None, note_midi=None, note_dur=Non
     return fig
 
 
-def curve_to_figure(curve_gt, curve_pred=None, curve_base=None, grid=None):
+def curve_to_figure(curve_gt, curve_pred=None, curve_base=None, grid=None, base_label='base'):
     if isinstance(curve_gt, torch.Tensor):
         curve_gt = curve_gt.cpu().numpy()
     if isinstance(curve_pred, torch.Tensor):
@@ -88,7 +112,7 @@ def curve_to_figure(curve_gt, curve_pred=None, curve_base=None, grid=None):
         curve_base = curve_base.cpu().numpy()
     fig = plt.figure()
     if curve_base is not None:
-        plt.plot(curve_base, color='g', label='base')
+        plt.plot(curve_base, color='grey', label=base_label)
     plt.plot(curve_gt, color='b', label='gt')
     if curve_pred is not None:
         plt.plot(curve_pred, color='r', label='pred')

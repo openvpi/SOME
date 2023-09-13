@@ -17,12 +17,13 @@ units_encoder_ckpt: pretrained/contentvec/checkpoint_best_legacy_500.pt
 pe: rmvpe
 pe_ckpt: pretrained/rmvpe/model.pt
 
-# global values
+# global constants
 midi_min: 0
 midi_max: 128
 midi_prob_deviation: 0.5
 midi_shift_proportion: 0.5
 midi_shift_range: [-12, 12]
+rest_threshold: 0.75
 
 # neural networks
 sort_by_len: true

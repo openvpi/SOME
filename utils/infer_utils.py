@@ -15,8 +15,8 @@ def decode_gaussian_blurred_probs(probs, vmin, vmax, deviation, threshold):
     product_sum = torch.sum(weights * idx_values, dim=2)  # [B, T]
     weight_sum = torch.sum(weights, dim=2)  # [B, T]
     values = product_sum / (weight_sum + (weight_sum == 0))  # avoid dividing by zero, [B, T]
-    masks = probs.max(dim=-1)[0] < threshold  # [B, T]
-    return values, masks
+    rest = probs.max(dim=-1)[0] < threshold  # [B, T]
+    return values, rest
 
 
 def decode_bounds_to_sequence(bounds):
