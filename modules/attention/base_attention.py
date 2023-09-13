@@ -22,7 +22,7 @@ class Attention(nn.Module):
         self.to_out = nn.Sequential(nn.Linear(hidden_dim, dim, ),
                                     )
 
-    def forward(self, q, kv=None):
+    def forward(self, q, kv=None,mask=None):
         # b, c, h, w = x.shape
         if kv is None:
             kv = q
@@ -37,8 +37,11 @@ class Attention(nn.Module):
             lambda t: rearrange(t, "b t (h c) -> b h t c", h=self.heads), (q, k, v)
         )
 
+        if mask is not None:
+            mask = mask.unsqueeze(1).unsqueeze(1) ==0
+
         with torch.backends.cuda.sdp_kernel(enable_math=False):
-            out = F.scaled_dot_product_attention(q, k, v)
+            out = F.scaled_dot_product_attention(q, k, v,attn_mask=mask)
 
         out = rearrange(out, "b h t c -> b t (h c) ", h=self.heads, )
         return self.to_out(out)

@@ -42,10 +42,10 @@ class conform_blocke(nn.Module):
         self.norm3 = nn.LayerNorm(dim)
         self.norm4 = nn.LayerNorm(dim)
         self.norm5 = nn.LayerNorm(dim)
-    def forward(self,x):
+    def forward(self,x,mask=None):
         x=self.ffn1(self.norm1(x))*0.5 + x
 
-        x=self.attdrop(self.att(self.norm2(x)))+x
+        x=self.attdrop(self.att(self.norm2(x),mask))+x
         x=self.conv(self.norm3(x))+x
         x = self.ffn2(self.norm4(x)) * 0.5 + x
         return self.norm5(x)
@@ -71,11 +71,13 @@ class midi_conform(nn.Module):
         # torch.masked_fill()
         x=self.inln(x+self.pitch_embed((1 + f0 / 700).log()))
         if mask is not None:
-            x=x.masked_fill(mask,0)
+            x=x.masked_fill(mask==1,0)
         for idx,i in enumerate(self.cf_lay):
             x=i(x)
             if self.use_lay_skip:
                 layskip+=self.skip_lay[idx](x)
+            if mask is not None:
+                x = x.masked_fill(mask == 1, 0)
         if self.use_lay_skip:
             layskip=layskip*self.lay_sc
             cutprp=self.cutheard(layskip)
