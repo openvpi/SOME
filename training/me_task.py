@@ -93,7 +93,7 @@ class MIDIExtractionTask(BaseTask):
             return probs, bounds
         else:
             losses = {}
-            midi_loss = self.midi_loss(probs, sample['prob'])
+            midi_loss = self.midi_loss(probs, sample['probs'])
             bound_loss = self.bound_loss(bounds, sample['bounds'])
             # midi_loss, bound_loss = self.midiloss((probs, bounds), (sample['probs'], sample['bounds']))
 

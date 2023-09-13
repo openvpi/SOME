@@ -30,7 +30,7 @@ units_dim: 768
 midi_num_bins: 256
 model_cls: modules.model.midi_conform.midi_conforms
 midi_extractor_args:
-  lay: 3
+  lay: 6
   dim: 512
 
   use_lay_skip: true
@@ -70,7 +70,7 @@ log_interval: 100
 num_sanity_val_steps: 1  # steps of validation at the beginning
 val_check_interval: 2000
 num_ckpt_keep: 5
-max_updates: 320000
+max_updates: 100000
 permanent_ckpt_start: 200000
 permanent_ckpt_interval: 40000
 
