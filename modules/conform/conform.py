@@ -69,15 +69,17 @@ class midi_conform(nn.Module):
     def forward(self,x,f0,mask=None):
         layskip=0
         # torch.masked_fill()
-        x=self.inln(x+self.pitch_embed((1 + f0 / 700).log()))
+
+        f0emb=self.pitch_embed((1 + f0.unsqueeze(-1) / 700).log())
+        x=self.inln(x+f0emb)
         if mask is not None:
-            x=x.masked_fill(mask==1,0)
+            x=x.masked_fill(mask.unsqueeze(-1)==1,0)
         for idx,i in enumerate(self.cf_lay):
             x=i(x)
             if self.use_lay_skip:
                 layskip+=self.skip_lay[idx](x)
             if mask is not None:
-                x = x.masked_fill(mask == 1, 0)
+                x = x.masked_fill(mask.unsqueeze(-1) == 1, 0)
         if self.use_lay_skip:
             layskip=layskip*self.lay_sc
             cutprp=self.cutheard(layskip)
