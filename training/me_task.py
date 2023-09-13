@@ -47,7 +47,7 @@ class MIDIExtractionDataset(BaseDataset):
         unit2note_ = unit2note[..., None].repeat([1, 1, self.num_bins])
         probs = torch.gather(probs, 1, unit2note_)
         batch['probs'] = probs  # [B, T_s, N]
-
+        batch['unit2note'] = unit2note
         bounds = torch.diff(
             unit2note, dim=1, prepend=unit2note.new_zeros((batch['size'], 1))
         ) > 0
