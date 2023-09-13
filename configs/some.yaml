@@ -23,14 +23,14 @@ midi_max: 128
 midi_prob_deviation: 0.5
 
 # neural networks
-units_dim: 256
+
+units_dim: 768
 midi_num_bins: 256
 model_cls: modules.model.midi_conform.midi_conform
 midi_extractor_args:
   lay: 6
   dim: 512
-  indim: 768
-  outtype: 128
+
   use_lay_skip: false
   kernel_size: 31
   conv_drop: 0.1

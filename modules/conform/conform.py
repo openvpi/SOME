@@ -51,12 +51,12 @@ class conform_blocke(nn.Module):
         return self.norm5(x)
 
 class midi_conform(nn.Module):
-    def __init__(self,lay:int,dim:int,indim:int,outtype:int,use_lay_skip:bool,kernel_size = 31,conv_drop=0.1,ffn_latent_drop = 0.1,
+    def __init__(self,lay:int,dim:int,indim:int,outdim:int,use_lay_skip:bool,kernel_size = 31,conv_drop=0.1,ffn_latent_drop = 0.1,
                  ffn_out_drop = 0.1, attention_drop= 0.1,attention_heads=4,attention_heads_dim=64):
         super().__init__()
         self.pitch_embed = nn.Linear(1, indim)
         self.inln=nn.Linear(indim,dim)
-        self.outln=nn.Linear(dim,outtype)
+        self.outln=nn.Linear(dim,outdim)
         self.cutheard=nn.Linear(dim,1)
         self.lay=lay
         self.use_lay_skip=use_lay_skip

@@ -56,9 +56,12 @@ class MIDIExtractionTask(BaseTask):
 
 
     def build_model(self):
+        cfg:dict=self.config['model_cls']
+        cfg.update({'indim':self.config['units_dim'],'outdim':self.config['midi_num_bins']})
 
 
-        model=build_object_from_class_name(self.config['model_cls'],nn.Module,config=self.config)
+
+        model=build_object_from_class_name(cfg,nn.Module,config=self.config)
 
 
         return model
