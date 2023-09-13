@@ -28,10 +28,10 @@ units_dim: 768
 midi_num_bins: 256
 model_cls: modules.model.midi_conform.midi_conforms
 midi_extractor_args:
-  lay: 6
+  lay: 3
   dim: 512
 
-  use_lay_skip: false
+  use_lay_skip: true
   kernel_size: 31
   conv_drop: 0.1
   ffn_latent_drop: 0.1
