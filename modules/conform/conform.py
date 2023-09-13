@@ -54,9 +54,11 @@ class conform_blocke(nn.Module):
 
 
 class midi_conform(nn.Module):
-    def __init__(self, lay: int, dim: int, indim: int, outdim: int, use_lay_skip: bool, kernel_size=31, conv_drop=0.1,
-                 ffn_latent_drop=0.1,
-                 ffn_out_drop=0.1, attention_drop=0.1, attention_heads=4, attention_heads_dim=64):
+    def __init__(self, lay: int, dim: int, indim: int, outdim: int, use_lay_skip: bool, kernel_size: int = 31,
+                 conv_drop: float = 0.1,
+                 ffn_latent_drop: float = 0.1,
+                 ffn_out_drop: float = 0.1, attention_drop: float = 0.1, attention_heads: int = 4,
+                 attention_heads_dim: int = 64):
         super().__init__()
         self.pitch_embed = nn.Linear(1, indim)
         self.inln = nn.Linear(indim, dim)
