@@ -1,6 +1,7 @@
 # preprocessing
 binarizer_cls: preprocessing.MIDIExtractionBinarizer
-raw_data_dir: []
+raw_data_dir:
+  - ../DiffSinger/data/junninghua_v3_part1/raw
 binary_data_dir: data/some_dataset/binary
 binarization_args:
   num_workers: 0
@@ -8,9 +9,18 @@ binarization_args:
 hop_size: 320
 audio_sample_rate: 16000
 test_prefixes:
-  - item1
-  - item2
+  - 'ChiLing_001'
+  - 'FengYingYue_002'
+  - 'JianXin_004'
+  - 'JuanZhuLian_013'
+  - 'QiHuang_004'
+  - 'QinShi_013'
+  - 'TianXia_005'
+  - 'WuJiYa_001'
+  - 'YeGuangBei_013'
+  - 'YuanCangTianBianLeXin_000'
 units_encoder: contentvec
+units_encoder_ckpt: pretrained/contentvec/checkpoint_best_legacy_500.pt
 pe: rmvpe
 pe_ckpt: pretrained/rmvpe/model.pt
 

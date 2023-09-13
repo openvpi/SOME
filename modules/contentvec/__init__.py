@@ -2,12 +2,10 @@ import torch
 from fairseq import checkpoint_utils
 
 
-class Audio2ContentVec(torch.nn.Module):
+class ContentVec(torch.nn.Module):
     def __init__(self, path, h_sample_rate=16000, h_hop_size=320, device='cpu'):
         super().__init__()
         self.device = device
-        print(' [Encoder Model] Content Vec')
-        print(' [Loading] ' + path)
         models, self.saved_cfg, self.task = checkpoint_utils.load_model_ensemble_and_task([path], suffix="", )
         self.hubert = models[0].to(self.device).eval()
 

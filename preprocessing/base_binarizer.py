@@ -44,7 +44,6 @@ class BaseBinarizer:
         self.data_attrs = [] if data_attrs is None else data_attrs
 
         self.binarization_args = self.config['binarization_args']
-        self.augmentation_args = self.config.get('augmentation_args', {})
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         self.items = {}
@@ -147,7 +146,7 @@ class BaseBinarizer:
             self.process_dataset(
                 'train',
                 num_workers=int(self.binarization_args['num_workers']),
-                apply_augmentation=any(args['enabled'] for args in self.augmentation_args.values())
+                # apply_augmentation=False
             )
         except KeyboardInterrupt:
             exit(-1)
@@ -165,36 +164,31 @@ class BaseBinarizer:
         for item_name, meta_data in self.meta_data_iterator(prefix):
             args.append([item_name, meta_data, self.binarization_args])
 
-        aug_map = self.arrange_data_augmentation(self.meta_data_iterator(prefix)) if apply_augmentation else {}
-
-        def postprocess(_item):
+        def postprocess(_item, _is_raw=True):
             nonlocal total_sec, total_raw_sec
             if _item is None:
                 return
             builder.add_item(_item)
             lengths.append(_item['length'])
             total_sec += _item['seconds']
-            total_raw_sec += _item['seconds']
-
-            for task in aug_map.get(_item['name'], []):
-                aug_item = task['func'](_item, **task['kwargs'])
-                builder.add_item(aug_item)
-                lengths.append(aug_item['length'])
-                total_sec += aug_item['seconds']
+            if _is_raw:
+                total_raw_sec += _item['seconds']
 
         try:
             if num_workers > 0:
                 # code for parallel processing
-                for item in tqdm(
+                for items in tqdm(
                         chunked_multiprocess_run(self.process_item, args, num_workers=num_workers),
                         total=len(list(self.meta_data_iterator(prefix)))
                 ):
-                    postprocess(item)
+                    for i, item in enumerate(items):
+                        postprocess(item, i == 0)
             else:
                 # code for single cpu processing
                 for a in tqdm(args):
-                    item = self.process_item(*a)
-                    postprocess(item)
+                    items = self.process_item(*a)
+                    for i, item in enumerate(items):
+                        postprocess(item, i == 0)
         except KeyboardInterrupt:
             builder.finalize()
             raise
@@ -210,12 +204,6 @@ class BaseBinarizer:
                 f'| {prefix} total duration (after augmentation): {total_sec:.2f}s ({total_sec / total_raw_sec:.2f}x)')
         else:
             print(f'| {prefix} total duration: {total_raw_sec:.2f}s')
-
-    def arrange_data_augmentation(self, data_iterator):
-        """
-        Code for all types of data augmentation should be added here.
-        """
-        raise NotImplementedError()
 
     def process_item(self, item_name, meta_data, binarization_args):
         raise NotImplementedError()
