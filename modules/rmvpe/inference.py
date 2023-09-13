@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from torchaudio.transforms import Resample
 
-from ...utils.pitch_utils import interp_f0, resample_align_curve
+from utils.pitch_utils import interp_f0, resample_align_curve
 from .constants import *
 from .model import E2E0
 from .spec import MelSpectrogram
@@ -11,9 +11,12 @@ from .utils import to_local_average_f0, to_viterbi_f0
 
 
 class RMVPE:
-    def __init__(self, model_path, hop_length=160):
+    def __init__(self, model_path, hop_length=160, device=None):
         self.resample_kernel = {}
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        if device is None:
+            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        else:
+            self.device = device
         self.model = E2E0(4, 1, (2, 2)).eval().to(self.device)
         ckpt = torch.load(model_path, map_location=self.device)
         self.model.load_state_dict(ckpt['model'], strict=False)
