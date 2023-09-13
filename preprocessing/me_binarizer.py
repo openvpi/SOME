@@ -127,7 +127,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
                 rmvpe = modules.rmvpe.RMVPE(self.config['pe_ckpt'], device=self.device)
             f0, _ = rmvpe.get_pitch(
                 waveform, sample_rate=self.config['audio_sample_rate'],
-                hop_size=self.config['hop_size'],
+                hop_size=rmvpe.mel_extractor.hop_length,
                 length=(waveform.shape[0] + rmvpe.mel_extractor.hop_length - 1) // rmvpe.mel_extractor.hop_length,
                 interp_uv=True
             )
