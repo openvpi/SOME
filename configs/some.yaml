@@ -12,7 +12,7 @@ audio_sample_rate: 16000
 test_prefixes:
   - item1
   - item2
-units_encoder: contentvec
+units_encoder: contentvec768l12
 units_encoder_ckpt: pretrained/contentvec/checkpoint_best_legacy_500.pt
 pe: rmvpe
 pe_ckpt: pretrained/rmvpe/model.pt
@@ -23,7 +23,7 @@ midi_max: 128
 midi_prob_deviation: 0.5
 
 # neural networks
-units_dim: 256
+units_dim: 768
 midi_num_bins: 256
 model_cls: modules.model.midi_conform.midi_conform
 midi_extractor_args:
