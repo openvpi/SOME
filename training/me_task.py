@@ -56,27 +56,21 @@ class MIDIExtractionDataset(BaseDataset):
         return batch
 
 
-#todo
+# todo
 class MIDIExtractionTask(BaseTask):
 
-    def __init__(self,config:dict):
+    def __init__(self, config: dict):
         super().__init__(config)
         self.dataset_cls = MIDIExtractionDataset
 
-
     def build_model(self):
 
-
-
-
-
-        model=build_object_from_class_name(self.config['model_cls'],nn.Module,config=self.config)
-
+        model = build_object_from_class_name(self.config['model_cls'], nn.Module, config=self.config)
 
         return model
 
     def build_losses_and_metrics(self):
-        self.midiloss=self.model.get_loss()
+        self.midiloss = self.model.get_loss()
 
     def run_model(self, sample, infer=False):
         """
@@ -89,18 +83,15 @@ class MIDIExtractionTask(BaseTask):
         mask = sample['unit2note'] > 0
 
         f0 = sample['pitch']
-        probs,bounds=self.model(x=spec,f0=f0,mask=mask)
+        probs, bounds = self.model(x=spec, f0=f0, mask=mask)
 
         if infer:
-            return (probs,bounds)
+            return (probs, bounds)
         else:
             losses = {}
-            midi_loss,bound_loss=self.midiloss((probs,bounds),(sample['probs'],sample['bounds']))
-
-
+            midi_loss, bound_loss = self.midiloss((probs, bounds), (sample['probs'], sample['bounds']))
 
             losses['bound_loss'] = bound_loss
-
 
             losses['midi_loss'] = midi_loss
 
