@@ -43,8 +43,9 @@ class BaseDataset(Dataset):
             the index function.
     """
 
-    def __init__(self, data_dir, prefix):
+    def __init__(self, config: dict, data_dir, prefix):
         super().__init__()
+        self.config = config
         self.prefix = prefix
         self.data_dir = data_dir if isinstance(data_dir, pathlib.Path) else pathlib.Path(data_dir)
         self.sizes = np.load(self.data_dir / f'{self.prefix}.lengths')
@@ -130,8 +131,14 @@ class BaseTask(pl.LightningModule):
             self.load_finetune_ckpt(self.load_pre_train_model())
         self.print_arch()
         self.build_losses_and_metrics()
-        self.train_dataset = self.dataset_cls(self.config['train_set_name'])
-        self.valid_dataset = self.dataset_cls(self.config['valid_set_name'])
+        self.train_dataset = self.dataset_cls(
+            config=self.config, data_dir=self.config['binary_data_dir'],
+            prefix=self.config['train_set_name']
+        )
+        self.valid_dataset = self.dataset_cls(
+            config=self.config, data_dir=self.config['binary_data_dir'],
+            prefix=self.config['valid_set_name']
+        )
 
     def get_need_freeze_state_dict_key(self, model_state_dict) -> list:
         key_list = []

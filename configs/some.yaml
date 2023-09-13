@@ -1,31 +1,44 @@
 # preprocessing
 binarizer_cls: preprocessing.MIDIExtractionBinarizer
-raw_data_dir:
-  - ../DiffSinger/data/junninghua_v3_part1/raw
+raw_data_dir: []
 binary_data_dir: data/some_dataset/binary
 binarization_args:
   num_workers: 0
   shuffle: true
+valid_set_name: valid
+train_set_name: train
 hop_size: 320
 audio_sample_rate: 16000
 test_prefixes:
-  - 'ChiLing_001'
-  - 'FengYingYue_002'
-  - 'JianXin_004'
-  - 'JuanZhuLian_013'
-  - 'QiHuang_004'
-  - 'QinShi_013'
-  - 'TianXia_005'
-  - 'WuJiYa_001'
-  - 'YeGuangBei_013'
-  - 'YuanCangTianBianLeXin_000'
+  - item1
+  - item2
 units_encoder: contentvec
 units_encoder_ckpt: pretrained/contentvec/checkpoint_best_legacy_500.pt
 pe: rmvpe
 pe_ckpt: pretrained/rmvpe/model.pt
 
+# global values
+midi_min: 0
+midi_max: 128
+midi_prob_deviation: 0.5
+
 # neural networks
 units_dim: 256
+midi_num_bins: 256
+model_cls: modules.model.midi_conform.midi_conform
+midi_extractor_args:
+  lay: 6
+  dim: 512
+  indim: 768
+  outtype: 128
+  use_lay_skip: false
+  kernel_size: 31
+  conv_drop: 0.1
+  ffn_latent_drop: 0.1
+  ffn_out_drop: 0.1
+  attention_drop: 0.1
+  attention_heads: 8
+  attention_heads_dim: 64
 
 # training
 task_cls: training.MIDIExtractionTask
@@ -70,3 +83,15 @@ pl_trainer_num_nodes: 1
 pl_trainer_strategy: 'auto'
 ddp_backend: 'nccl' # choose from 'gloo', 'nccl', 'nccl_no_p2p'
 seed: 114514
+
+###########
+# finetune
+###########
+
+finetune_enabled: false
+finetune_ckpt_path: null
+finetune_ignored_params: []
+finetune_strict_shapes: true
+
+freezing_enabled: false
+frozen_params: []

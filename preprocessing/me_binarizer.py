@@ -20,8 +20,8 @@ MIDI_EXTRACTION_ITEM_ATTRIBUTES = [
     'units',  # contentvec units, float32[T_s, 256]
     'pitch',  # actual pitch in semitones, float32[T_s,]
     'note_midi',  # note-level MIDI pitch, float32[T_n,]
-    'note_dur',  # durations of notes, in number of frames, int64[T_n,]
     'note_rest',  # flags for rest notes, bool[T_n,]
+    'note_dur',  # durations of notes, in number of frames, int64[T_n,]
     'unit2note',  # mel2ph format for alignment between units and notes
 ]
 
@@ -156,6 +156,9 @@ class MIDIExtractionBinarizer(BaseBinarizer):
         processed_input['note_rest'] = note_rest
 
         note_dur_sec = torch.FloatTensor(meta_data['note_dur']).to(self.device)
+        note_acc = torch.round(torch.cumsum(note_dur_sec, dim=0) / self.timestep + 0.5).long()
+        note_dur = torch.diff(note_acc, dim=0, prepend=torch.LongTensor([0]).to(self.device))
+        processed_input['note_dur'] = note_dur.cpu().numpy()
         unit2note = get_mel2ph_torch(
             self.lr, note_dur_sec, length, self.timestep, device=self.device
         )
