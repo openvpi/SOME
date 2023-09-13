@@ -38,11 +38,15 @@ class MIDIExtractionDataset(BaseDataset):
         unit2note_ = unit2note[..., None].repeat([1, 1, self.num_bins])
         probs = torch.gather(probs, 1, unit2note_)
         batch['probs'] = probs  # [B, T_s, N]
+        batch['mask'] = unit2note > 0
 
-        bounds = torch.diff(
+        bound = torch.diff(
             unit2note, dim=1, prepend=unit2note.new_zeros((batch['size'], 1))
-        ) > 0
-        batch['bounds'] = bounds  # [B, T_s]
+        )
+        bounds=bound>0
+
+
+        batch['bounds'] = torch.zeros_like(bound,dtype=torch.float).masked_fill(bounds,1)  # [B, T_s]
 
         return batch
 
@@ -56,12 +60,12 @@ class MIDIExtractionTask(BaseTask):
 
 
     def build_model(self):
-        cfg:dict=self.config['model_cls']
-        cfg.update({'indim':self.config['units_dim'],'outdim':self.config['midi_num_bins']})
 
 
 
-        model=build_object_from_class_name(cfg,nn.Module,config=self.config)
+
+
+        model=build_object_from_class_name(self.config['model_cls'],nn.Module,config=self.config)
 
 
         return model
@@ -75,11 +79,11 @@ class MIDIExtractionTask(BaseTask):
             1. run the full model
             2. calculate losses if not infer
         """
-        spec = sample['spec']  # [B, T_ph]
-        target = sample['target']  # [B, T_s, M]
+        spec = sample['units']  # [B, T_ph]
+        target = (sample['probs'],sample['bounds'])  # [B, T_s, M]
         mask=sample['mask']
 
-        f0 = sample['f0']
+        f0 = sample['pitch']
         output=self.model(x=spec,f0=f0,mask=mask)
 
         if infer:

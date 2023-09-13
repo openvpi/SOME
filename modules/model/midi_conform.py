@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 
+from modules.conform.conform import midi_conform
+
+
 class midi_loss(nn.Module):
     def __init__(self):
         super().__init__()
@@ -19,10 +22,13 @@ class midi_loss(nn.Module):
 
 
 
-class midi_conform(nn.Module):
+class midi_conforms(nn.Module):
     def __init__(self,config):
         super().__init__()
-        self.model=midi_conform(**config['midi_extractor_args'])
+
+        cfg=config['midi_extractor_args']
+        cfg.update({'indim':config['units_dim'],'outdim':config['midi_num_bins']})
+        self.model=midi_conform(**cfg)
 
     def forward(self,x,f0,mask=None):
         return self.model(x,f0,mask)

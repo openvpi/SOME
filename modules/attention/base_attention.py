@@ -38,7 +38,7 @@ class Attention(nn.Module):
         )
 
         if mask is not None:
-            mask = mask.unsqueeze(1).unsqueeze(1) ==0
+            mask = mask.unsqueeze(1).unsqueeze(1)
 
         with torch.backends.cuda.sdp_kernel(enable_math=False):
             out = F.scaled_dot_product_attention(q, k, v,attn_mask=mask)
