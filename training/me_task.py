@@ -17,6 +17,7 @@ class MIDIExtractionDataset(BaseDataset):
         self.deviation = self.config['midi_prob_deviation']
         self.interval = (self.midi_max - self.midi_min) / (self.num_bins - 1)  # align with centers of bins
         self.sigma = self.deviation / self.interval
+        self.midi_shift_proportion = self.config['midi_shift_proportion']
         self.midi_shift_min, self.midi_shift_max = self.config['midi_shift_range']
 
     def midi_to_bin(self, midi):
@@ -26,7 +27,7 @@ class MIDIExtractionDataset(BaseDataset):
         batch = super().collater(samples)
         midi_shifts = [
             random.random() * (self.midi_shift_max - self.midi_shift_min) + self.midi_shift_min
-            if self.allow_aug else 0
+            if self.allow_aug and random.random() < self.midi_shift_proportion else 0
             for _ in range(len(samples))
         ]
         batch['units'] = collate_nd([s['units'] for s in samples])  # [B, T_s, C]
