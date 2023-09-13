@@ -8,7 +8,7 @@ import modules.losses
 from utils import build_object_from_class_name, collate_nd
 from .base_task import BaseDataset, BaseTask
 from utils.infer_utils import decode_gaussian_blurred_probs, decode_bounds_to_sequence
-from utils.plot import boundary_to_figure, curve_to_figure
+from utils.plot import boundary_to_figure, curve_to_figure, spec_to_figure
 
 
 class MIDIExtractionDataset(BaseDataset):
@@ -133,7 +133,7 @@ class MIDIExtractionTask(BaseTask):
             midi_pred[rest_pred] = -torch.inf  # rest part is set to -inf
             note_midi_gt = sample['note_midi'].clone()
             note_midi_gt[sample['note_rest']] = -torch.inf
-            midi_gt = torch.gather(F.pad(note_midi_gt, [1, 0]), 1, unit2note_gt)
+            midi_gt = torch.gather(F.pad(note_midi_gt, [1, 0], value=-torch.inf), 1, unit2note_gt)
             self.plot_midi_curve(
                 batch_idx, midi_gt=midi_gt, midi_pred=midi_pred, pitch=sample['pitch']
             )
@@ -143,6 +143,12 @@ class MIDIExtractionTask(BaseTask):
     ############
     # validation plots
     ############
+    def plot_mel(self, batch_idx, probs_gt, probs_pred):
+        name = f'prob/{batch_idx}'
+        vmin, vmax = 0, 1
+        spec_cat = torch.cat([(probs_pred - probs_gt).abs() + vmin, probs_gt, probs_pred], -1)
+        self.logger.experiment.add_figure(name, spec_to_figure(spec_cat[0], vmin, vmax), self.global_step)
+
     def plot_boundary(self, batch_idx, bounds_gt, bounds_pred, dur_gt, dur_pred):
         name = f'boundary/{batch_idx}'
         bounds_gt = bounds_gt[0].cpu().numpy()
