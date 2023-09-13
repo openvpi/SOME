@@ -94,7 +94,7 @@ class MIDIExtractionTask(BaseTask):
 
 
 
-            losses['board_loss'] = board_loss
+            losses['bound_loss'] = board_loss
 
 
             losses['midi_loss'] = midi_loss
