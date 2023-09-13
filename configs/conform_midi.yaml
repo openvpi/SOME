@@ -16,3 +16,4 @@ midi_extractor_args:
   attention_heads: 8
   attention_heads_dim: 64
 model_cls: modules.model.midi_conform.midi_conform
+task_cls:
