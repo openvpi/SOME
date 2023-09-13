@@ -1,5 +1,3 @@
-import math
-from math import sqrt
 
 import torch
 import torch.nn as nn
@@ -22,7 +20,7 @@ class Attention(nn.Module):
         self.to_out = nn.Sequential(nn.Linear(hidden_dim, dim, ),
                                     )
 
-    def forward(self, q, kv=None,mask=None):
+    def forward(self, q, kv=None, mask=None):
         # b, c, h, w = x.shape
         if kv is None:
             kv = q
@@ -41,7 +39,7 @@ class Attention(nn.Module):
             mask = mask.unsqueeze(1).unsqueeze(1)
 
         with torch.backends.cuda.sdp_kernel(enable_math=False):
-            out = F.scaled_dot_product_attention(q, k, v,attn_mask=mask)
+            out = F.scaled_dot_product_attention(q, k, v, attn_mask=mask)
 
         out = rearrange(out, "b h t c -> b t (h c) ", h=self.heads, )
         return self.to_out(out)
