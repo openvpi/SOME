@@ -101,5 +101,9 @@ class MIDIExtractionTask(BaseTask):
         # raise NotImplementedError()
 
     def _validation_step(self, sample, batch_idx):
-        losses = self.run_model(sample)
+        losses = self.run_model(sample, infer=False)
+        if batch_idx < self.config['num_valid_plots']:
+            # TODO: draw plots on TensorBoard
+            pass
+
         return losses, sample['size']
