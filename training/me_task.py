@@ -89,13 +89,13 @@ class MIDIExtractionTask(BaseTask):
         mask = sample['unit2note'] > 0
 
         f0 = sample['pitch']
-        prid_probs,bounds=self.model(x=spec,f0=f0,mask=mask)
+        probs,bounds=self.model(x=spec,f0=f0,mask=mask)
 
         if infer:
-            return (prid_probs,bounds)
+            return (probs,bounds)
         else:
             losses = {}
-            midi_loss,bound_loss=self.midiloss((prid_probs,bounds),(sample['probs'],sample['bounds']))
+            midi_loss,bound_loss=self.midiloss((probs,bounds),(sample['probs'],sample['bounds']))
 
 
 
