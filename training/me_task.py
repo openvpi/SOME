@@ -61,6 +61,7 @@ class MIDIExtractionTask(BaseTask):
 
     def __init__(self, config: dict):
         super().__init__(config)
+        self.midiloss = None
         self.dataset_cls = MIDIExtractionDataset
 
     def build_model(self):
@@ -86,7 +87,7 @@ class MIDIExtractionTask(BaseTask):
         probs, bounds = self.model(x=spec, f0=f0, mask=mask)
 
         if infer:
-            return (probs, bounds)
+            return probs, bounds
         else:
             losses = {}
             midi_loss, bound_loss = self.midiloss((probs, bounds), (sample['probs'], sample['bounds']))
