@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch import nn
 
 import modules.losses
-from utils import build_object_from_class_name, collate_nd
+from utils import build_object_from_class_name, collate_nd, infer_utils
 from .base_task import BaseDataset, BaseTask
 
 
@@ -108,6 +108,7 @@ class MIDIExtractionTask(BaseTask):
     def _validation_step(self, sample, batch_idx):
         losses = self.run_model(sample, infer=False)
         if batch_idx < self.config['num_valid_plots']:
+            probs, bounds = self.run_model(sample, infer=True)
             # TODO: draw plots on TensorBoard
             pass
 
