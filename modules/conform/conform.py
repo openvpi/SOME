@@ -88,6 +88,7 @@ class midi_conform(nn.Module):
             cutprp = self.cutheard(x)
             midiout = self.outln(x)
         cutprp=torch.sigmoid(cutprp)
+        midiout = torch.sigmoid(midiout)
         return midiout,cutprp
 
 
