@@ -116,6 +116,7 @@ class MIDIExtractionTask(BaseTask):
             masks = unit2note_gt > 0
             probs *= masks[..., None]
             bounds *= masks
+            self.plot_prob(batch_idx, sample['probs'], probs)
 
             unit2note_pred = decode_bounds_to_sequence(bounds) * masks
             dur_pred = unit2note_pred.new_zeros(1, unit2note_pred.max() + 1).scatter_add(
@@ -143,7 +144,7 @@ class MIDIExtractionTask(BaseTask):
     ############
     # validation plots
     ############
-    def plot_mel(self, batch_idx, probs_gt, probs_pred):
+    def plot_prob(self, batch_idx, probs_gt, probs_pred):
         name = f'prob/{batch_idx}'
         vmin, vmax = 0, 1
         spec_cat = torch.cat([(probs_pred - probs_gt).abs() + vmin, probs_gt, probs_pred], -1)
