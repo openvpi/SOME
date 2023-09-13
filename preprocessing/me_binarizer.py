@@ -6,6 +6,7 @@ import librosa
 import numpy as np
 import torch
 
+import modules.contentvec
 from modules.commons import LengthRegulator
 from utils.binarizer_utils import get_mel2ph_torch
 from utils.plot import distribution_to_figure
@@ -13,7 +14,7 @@ from .base_binarizer import BaseBinarizer
 
 os.environ["OMP_NUM_THREADS"] = "1"
 MIDI_EXTRACTION_ITEM_ATTRIBUTES = [
-    'units',
+    'units',  # contentvec units, float32[T_s, 256]
     'pitch',  # actual pitch in semitones, float32[T_s,]
     'midi_prob',
     'midi_sep',
@@ -21,6 +22,7 @@ MIDI_EXTRACTION_ITEM_ATTRIBUTES = [
     'note_dur',  # durations of notes, in number of frames, int64[T_n,]
     'note_rest',  # flags for rest notes, bool[T_n,]
 ]
+contentvec = modules.contentvec.Audio2ContentVec()
 
 
 class MIDIExtractionBinarizer(BaseBinarizer):
@@ -89,6 +91,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
 
     @torch.no_grad()
     def process_item(self, item_name, meta_data, binarization_args):
+        waveform, _ = librosa.load(meta_data['wav_fn'], sr=self.config['audio_sample_rate'], mono=True)
         seconds = length * self.config['hop_size'] / self.config['audio_sample_rate']
         processed_input = {
             'name': item_name,

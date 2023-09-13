@@ -15,6 +15,7 @@ pe: rmvpe
 pe_ckpt: pretrained/rmvpe/model.pt
 
 # neural networks
+units_dim: 256
 
 # training
 task_cls: training.MIDIExtractionTask
