@@ -1,7 +1,16 @@
 # preprocessing
-binarizer_cls: null
+binarizer_cls: preprocessing.MIDIExtractionBinarizer
 raw_data_dir: []
-binary_data_dir: null
+binary_data_dir: data/some_dataset/binary
+binarization_args:
+  num_workers: 0
+  shuffle: true
+hop_size: 320
+audio_sample_rate: 16000
+test_prefixes:
+  - item1
+  - item2
+units_encoder: contentvec
 pe: rmvpe
 pe_ckpt: pretrained/rmvpe/model.pt
 
