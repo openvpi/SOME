@@ -122,7 +122,7 @@ class MIDIExtractionTask(BaseTask):
                 dim=1, index=unit2note_pred, src=unit2note_pred
             )[:, 1:]
             self.plot_boundary(
-                batch_idx, bounds_gt=sample['bound'], bounds_pred=bounds,
+                batch_idx, bounds_gt=sample['bounds'], bounds_pred=bounds,
                 dur_gt=sample['note_dur'], dur_pred=dur_pred
             )
 
