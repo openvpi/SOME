@@ -2,11 +2,11 @@ import torch
 from fairseq import checkpoint_utils
 
 
-class ContentVec(torch.nn.Module):
+class ContentVec768L12(torch.nn.Module):
     def __init__(self, path, h_sample_rate=16000, h_hop_size=320, device='cpu'):
         super().__init__()
         self.device = device
-        models, self.saved_cfg, self.task = checkpoint_utils.load_model_ensemble_and_task([path], suffix="", )
+        models, self.saved_cfg, self.task = checkpoint_utils.load_model_ensemble_and_task([path], suffix="")
         self.hubert = models[0].to(self.device).eval()
 
     def forward(self, waveform):  # B, T
@@ -19,6 +19,6 @@ class ContentVec(torch.nn.Module):
         }
         with torch.no_grad():
             logits = self.hubert.extract_features(**inputs)
-            feats = self.hubert.final_proj(logits[0])
+            feats = logits[0]
         units = feats  # .transpose(2, 1)
         return units

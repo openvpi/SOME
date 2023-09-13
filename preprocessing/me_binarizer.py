@@ -101,7 +101,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
         wav_tensor = torch.from_numpy(waveform).to(self.device)
         global contentvec
         if contentvec is None:
-            contentvec = modules.contentvec.ContentVec(self.config['units_encoder_ckpt'], device=self.device)
+            contentvec = modules.contentvec.ContentVec768L12(self.config['units_encoder_ckpt'], device=self.device)
         units = contentvec(wav_tensor).squeeze(0).cpu().numpy()
         assert len(units.shape) == 2 and units.shape[1] == self.config['units_dim'], \
             f'Shape of units must be [T, units_dim], but is {units.shape}.'
