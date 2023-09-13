@@ -23,7 +23,7 @@ midi_max: 128
 midi_prob_deviation: 0.5
 
 # neural networks
-sort_by_len: false
+sort_by_len: true
 units_dim: 768
 midi_num_bins: 256
 model_cls: modules.model.midi_conform.midi_conforms
@@ -44,7 +44,7 @@ midi_extractor_args:
 task_cls: training.MIDIExtractionTask
 optimizer_args:
   optimizer_cls: torch.optim.AdamW
-  lr: 0.0004
+  lr: 0.00005
   beta1: 0.9
   beta2: 0.98
   weight_decay: 0
