@@ -7,13 +7,11 @@ binarization_args:
   shuffle: true
 valid_set_name: valid
 train_set_name: train
-hop_size: 320
+hop_size: 160  # 320
 win_size: 1024
 audio_sample_rate: 16000
 test_prefixes:
-  - item1
-  - item2
-units_encoder: contentvec768l12
+units_encoder: mel  # contentvec768l12
 units_encoder_ckpt: pretrained/contentvec/checkpoint_best_legacy_500.pt
 pe: rmvpe
 pe_ckpt: pretrained/rmvpe/model.pt
@@ -28,7 +26,7 @@ rest_threshold: 0.75
 
 # neural networks
 sort_by_len: true
-units_dim: 768
+units_dim: 80  # 768
 midi_num_bins: 256
 model_cls: modules.model.midi_conform.midi_conforms
 midi_extractor_args:
