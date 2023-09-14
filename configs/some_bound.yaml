@@ -66,7 +66,7 @@ sampler_frame_count_grid: 6
 ds_workers: 4
 dataloader_prefetch_factor: 2
 
-max_batch_size: 8
+max_batch_size: 7
 max_batch_frames: 40000
 max_val_batch_size: 1
 max_val_batch_frames: 10000
