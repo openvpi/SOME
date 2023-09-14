@@ -8,6 +8,7 @@ binarization_args:
 valid_set_name: valid
 train_set_name: train
 hop_size: 320
+win_size: 1024
 audio_sample_rate: 16000
 test_prefixes:
   - item1
