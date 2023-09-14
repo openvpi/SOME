@@ -1,7 +1,7 @@
 # preprocessing
 binarizer_cls: preprocessing.MIDIExtractionBinarizer
 raw_data_dir: []
-binary_data_dir: data/some_dataset/binary
+binary_data_dir: data/some_dataset_mel/binary
 binarization_args:
   num_workers: 0
   shuffle: true
@@ -20,9 +20,9 @@ pe_ckpt: pretrained/rmvpe/model.pt
 midi_min: 0
 midi_max: 128
 midi_prob_deviation: 0.5
-midi_shift_proportion: 0.5
-midi_shift_range: [-12, 12]
-rest_threshold: 0.75
+midi_shift_proportion: 0.0
+midi_shift_range: [-6, 6]
+rest_threshold: 0.1
 
 # neural networks
 sort_by_len: true
@@ -46,14 +46,19 @@ midi_extractor_args:
 task_cls: training.MIDIExtractionTask
 optimizer_args:
   optimizer_cls: torch.optim.AdamW
-  lr: 0.00005
+  lr: 0.0001
   beta1: 0.9
   beta2: 0.98
   weight_decay: 0
+#lr_scheduler_args:
+#  scheduler_cls: torch.optim.lr_scheduler.StepLR
+#  step_size: 50000
+#  gamma: 0.5
+
 lr_scheduler_args:
-  scheduler_cls: torch.optim.lr_scheduler.StepLR
-  step_size: 50000
-  gamma: 0.5
+  scheduler_cls: lr_scheduler.scheduler.WarmupLR
+  warmup_steps: 5000
+  min_lr: 0.00001
 
 clip_grad_norm: 1
 accumulate_grad_batches: 1
@@ -68,7 +73,7 @@ max_val_batch_frames: 10000
 num_valid_plots: 10
 log_interval: 100
 num_sanity_val_steps: 1  # steps of validation at the beginning
-val_check_interval: 2000
+val_check_interval: 1000
 num_ckpt_keep: 5
 max_updates: 100000
 permanent_ckpt_start: 200000
@@ -78,6 +83,7 @@ permanent_ckpt_interval: 40000
 # pytorch lightning
 # Read https://lightning.ai/docs/pytorch/stable/common/trainer.html#trainer-class-api for possible values
 ###########
+#pl_trainer_accelerator: 'cpu'
 pl_trainer_accelerator: 'auto'
 pl_trainer_devices: 'auto'
 pl_trainer_precision: '32-true'

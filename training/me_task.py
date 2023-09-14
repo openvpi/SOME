@@ -89,6 +89,7 @@ class MIDIExtractionTask(BaseTask):
         spec = sample['units']  # [B, T_ph]
         # target = (sample['probs'],sample['bounds'])  # [B, T_s, M]
         mask = sample['unit2note'] > 0
+        # mask=None
 
         f0 = sample['pitch']
         probs, bounds = self.model(x=spec, f0=f0, mask=mask)
@@ -98,9 +99,9 @@ class MIDIExtractionTask(BaseTask):
         else:
             losses = {}
             midi_loss = self.midi_loss(probs, sample['probs'])
-            bound_loss = self.bound_loss(bounds, sample['bounds'])
-
-            losses['bound_loss'] = bound_loss
+            # bound_loss = self.bound_loss(bounds, sample['bounds'])
+            #
+            # losses['bound_loss'] = bound_loss
 
             losses['midi_loss'] = midi_loss
 

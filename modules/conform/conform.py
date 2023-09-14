@@ -44,13 +44,15 @@ class conform_blocke(nn.Module):
         self.norm4 = nn.LayerNorm(dim)
         self.norm5 = nn.LayerNorm(dim)
 
-    def forward(self, x, mask=None):
+
+    def forward(self, x, mask=None,):
         x = self.ffn1(self.norm1(x)) * 0.5 + x
 
-        x = self.attdrop(self.att(self.norm2(x), mask)) + x
+
+        x = self.attdrop(self.att(self.norm2(x), mask=mask)) + x
         x = self.conv(self.norm3(x)) + x
         x = self.ffn2(self.norm4(x)) * 0.5 + x
-        return self.norm5(x)
+        return x
 
 
 class midi_conform(nn.Module):
@@ -64,6 +66,7 @@ class midi_conform(nn.Module):
         self.inln = nn.Linear(indim, dim)
         self.outln = nn.Linear(dim, outdim)
         self.cutheard = nn.Linear(dim, 1)
+        # self.cutheard = nn.Linear(dim, outdim)
         self.lay = lay
         self.use_lay_skip = use_lay_skip
         self.cf_lay = nn.ModuleList(
@@ -74,12 +77,12 @@ class midi_conform(nn.Module):
             self.skip_lay = nn.ModuleList([nn.Sequential(nn.Linear(dim, dim), nn.SiLU()) for _ in range(lay)])
             self.lay_sc = 1 / sqrt(lay)
 
-    def forward(self, x, f0, mask=None):
+    def forward(self, x, pitch, mask=None):
         layskip = 0
         # torch.masked_fill()
 
-        f0emb = self.pitch_embed((1 + f0.unsqueeze(-1) / 700).log())
-        x = self.inln(x + f0emb)
+
+        x = self.inln(x )
         if mask is not None:
             x = x.masked_fill(~mask.unsqueeze(-1), 0)
         for idx, i in enumerate(self.cf_lay):

@@ -38,7 +38,8 @@ class Attention(nn.Module):
         if mask is not None:
             mask = mask.unsqueeze(1).unsqueeze(1)
 
-        with torch.backends.cuda.sdp_kernel(enable_math=False):
+        with torch.backends.cuda.sdp_kernel(enable_math=False
+                                            ):
             out = F.scaled_dot_product_attention(q, k, v, attn_mask=mask)
 
         out = rearrange(out, "b h t c -> b t (h c) ", h=self.heads, )
