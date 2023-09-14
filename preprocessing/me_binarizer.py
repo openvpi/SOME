@@ -28,6 +28,7 @@ MIDI_EXTRACTION_ITEM_ATTRIBUTES = [
 # These modules are used as global variables due to a PyTorch shared memory bug on Windows platforms.
 # See https://github.com/pytorch/pytorch/issues/100358
 contentvec = None
+mel_spec = None
 rmvpe = None
 
 
@@ -99,10 +100,23 @@ class MIDIExtractionBinarizer(BaseBinarizer):
     def process_item(self, item_name, meta_data, binarization_args):
         waveform, _ = librosa.load(meta_data['wav_fn'], sr=self.config['audio_sample_rate'], mono=True)
         wav_tensor = torch.from_numpy(waveform).to(self.device)
-        global contentvec
-        if contentvec is None:
-            contentvec = modules.contentvec.ContentVec768L12(self.config['units_encoder_ckpt'], device=self.device)
-        units = contentvec(wav_tensor).squeeze(0).cpu().numpy()
+
+        units_encoder = self.config['units_encoder']
+        if units_encoder == 'contentvec768l12':
+            global contentvec
+            if contentvec is None:
+                contentvec = modules.contentvec.ContentVec768L12(self.config['units_encoder_ckpt'], device=self.device)
+            units = contentvec(wav_tensor).squeeze(0).cpu().numpy()
+        elif units_encoder == 'mel':
+            global mel_spec
+            if mel_spec is None:
+                mel_spec = modules.rmvpe.MelSpectrogram(
+                    n_mel_channels=self.config['units_dim'], sampling_rate=self.config['audio_sample_rate'],
+                    win_length=self.config['win_size'], hop_length=self.config['hop_size']
+                ).to(self.device)
+            units = mel_spec.forward(wav_tensor.unsqueeze(0)).transpose(1, 2).squeeze(0).cpu().numpy()
+        else:
+            raise NotImplementedError(f'Invalid units encoder: {units_encoder}')
         assert len(units.shape) == 2 and units.shape[1] == self.config['units_dim'], \
             f'Shape of units must be [T, units_dim], but is {units.shape}.'
         length = units.shape[0]
