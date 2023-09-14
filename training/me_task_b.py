@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from torch import nn
 
 import modules.losses
-import modules.metrics
 from utils import build_object_from_class_name, collate_nd
 from .base_task import BaseDataset, BaseTask
 from utils.infer_utils import decode_gaussian_blurred_probs, decode_bounds_to_sequence
@@ -80,7 +79,6 @@ class MIDIExtractionTask(BaseTask):
     def build_losses_and_metrics(self):
         self.midi_loss = nn.BCELoss()
         self.bound_loss = modules.losses.BinaryEMDLoss()
-        self.register_metric('midi_acc', modules.metrics.MIDIAccuracy(tolerance=0.5))
 
     def run_model(self, sample, infer=False):
         """
@@ -101,9 +99,9 @@ class MIDIExtractionTask(BaseTask):
         else:
             losses = {}
             midi_loss = self.midi_loss(probs, sample['probs'])
-            # bound_loss = self.bound_loss(bounds, sample['bounds'])
-            #
-            # losses['bound_loss'] = bound_loss
+            bound_loss = self.bound_loss(bounds, sample['bounds'])
+
+            losses['bound_loss'] = bound_loss
 
             losses['midi_loss'] = midi_loss
 
@@ -140,9 +138,6 @@ class MIDIExtractionTask(BaseTask):
             midi_gt = torch.gather(F.pad(note_midi_gt, [1, 0], value=-torch.inf), 1, unit2note_gt)
             self.plot_midi_curve(
                 batch_idx, midi_gt=midi_gt, midi_pred=midi_pred, pitch=sample['pitch']
-            )
-            self.midi_acc.update(
-                midi_pred=midi_pred, rest_pred=rest_pred, midi_gt=midi_gt, rest_gt=midi_gt < 0, mask=masks
             )
 
         return losses, sample['size']
