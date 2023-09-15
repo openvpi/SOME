@@ -7,6 +7,10 @@ binarization_args:
   shuffle: true
 valid_set_name: valid
 train_set_name: train
+use_buond_loss: true
+use_midi_loss: true
+
+
 hop_size: 160  # 320
 win_size: 1024
 audio_sample_rate: 16000
@@ -30,7 +34,7 @@ units_dim: 80  # 768
 midi_num_bins: 256
 model_cls: modules.model.midi_conform.midi_conforms
 midi_extractor_args:
-  lay: 6
+  lay: 3
   dim: 512
 
   use_lay_skip: true

@@ -33,7 +33,7 @@ midi_extractor_args:
   lay: 6
   dim: 512
 
-  use_lay_skip: true
+  use_lay_skip: false
   kernel_size: 31
   conv_drop: 0.1
   ffn_latent_drop: 0.1
@@ -70,10 +70,10 @@ max_batch_size: 7
 max_batch_frames: 40000
 max_val_batch_size: 1
 max_val_batch_frames: 10000
-num_valid_plots: 10
+num_valid_plots: 20
 log_interval: 100
 num_sanity_val_steps: 1  # steps of validation at the beginning
-val_check_interval: 1000
+val_check_interval: 8000
 num_ckpt_keep: 5
 max_updates: 100000
 permanent_ckpt_start: 200000

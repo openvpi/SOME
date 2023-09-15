@@ -3,7 +3,7 @@ import random
 import torch
 import torch.nn.functional as F
 from torch import nn
-
+import modules.metrics
 import modules.losses
 from utils import build_object_from_class_name, collate_nd
 from .base_task import BaseDataset, BaseTask
@@ -79,6 +79,7 @@ class MIDIExtractionTask(BaseTask):
     def build_losses_and_metrics(self):
         self.midi_loss = nn.BCELoss()
         self.bound_loss = modules.losses.BinaryEMDLoss()
+        self.register_metric('midi_acc', modules.metrics.MIDIAccuracy(tolerance=0.5))
 
     def run_model(self, sample, infer=False):
         """
@@ -98,12 +99,12 @@ class MIDIExtractionTask(BaseTask):
             return probs, bounds
         else:
             losses = {}
-            midi_loss = self.midi_loss(probs, sample['probs'])
+            # midi_loss = self.midi_loss(probs, sample['probs'])
             bound_loss = self.bound_loss(bounds, sample['bounds'])
 
             losses['bound_loss'] = bound_loss
 
-            losses['midi_loss'] = midi_loss
+            # losses['midi_loss'] = midi_loss
 
             return losses
 
@@ -139,6 +140,10 @@ class MIDIExtractionTask(BaseTask):
             self.plot_midi_curve(
                 batch_idx, midi_gt=midi_gt, midi_pred=midi_pred, pitch=sample['pitch']
             )
+            self.midi_acc.update(
+                midi_pred=midi_pred, rest_pred=rest_pred, midi_gt=midi_gt, rest_gt=midi_gt < 0, mask=masks
+            )
+
 
         return losses, sample['size']
 

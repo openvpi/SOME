@@ -70,6 +70,7 @@ class MIDIExtractionTask(BaseTask):
         self.midi_max = self.config['midi_max']
         self.midi_deviation = self.config['midi_prob_deviation']
         self.rest_threshold = self.config['rest_threshold']
+        self.cfg=config
 
     def build_model(self):
 
@@ -100,12 +101,15 @@ class MIDIExtractionTask(BaseTask):
             return probs, bounds
         else:
             losses = {}
-            midi_loss = self.midi_loss(probs, sample['probs'])
-            # bound_loss = self.bound_loss(bounds, sample['bounds'])
-            #
-            # losses['bound_loss'] = bound_loss
 
-            losses['midi_loss'] = midi_loss
+            if  self.cfg['use_buond_loss']:
+                bound_loss = self.bound_loss(bounds, sample['bounds'])
+
+                losses['bound_loss'] = bound_loss
+            if self.cfg['use_midi_loss']:
+                midi_loss = self.midi_loss(probs, sample['probs'])
+
+                losses['midi_loss'] = midi_loss
 
             return losses
 
