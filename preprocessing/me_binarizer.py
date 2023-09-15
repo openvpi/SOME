@@ -45,12 +45,34 @@ class MIDIExtractionBinarizer(BaseBinarizer):
             ):
                 item_name = utterance_label['name']
                 temp_dict = {
-                    'wav_fn': str(raw_data_dir / 'wavs' / f'{item_name}.wav'),
-                    'note_seq': utterance_label['note_seq'].split(),
-                    'note_dur': [float(x) for x in utterance_label['note_dur'].split()]
+                    'wav_fn': str(raw_data_dir / 'wavs' / f'{item_name}.wav')
                 }
-                assert len(temp_dict['note_seq']) == len(temp_dict['note_dur']), \
+                note_seq = utterance_label['note_seq'].split()
+                note_dur = [float(x) for x in utterance_label['note_dur'].split()]
+                assert len(note_seq) == len(note_dur), \
                     f'Lengths of note_seq and note_dur mismatch in \'{item_name}\'.'
+
+                # merge continuous rest notes
+                i = 0
+                note_seq_new = []
+                note_dur_new = []
+                while i < len(note_seq):
+                    if note_seq[i] != 'rest':
+                        note_seq_new.append(note_seq[i])
+                        note_dur_new.append(note_dur[i])
+                        i += 1
+                    else:
+                        j = i
+                        rest_dur = 0
+                        while j < len(note_seq) and note_seq[j] == 'rest':
+                            rest_dur += note_dur[j]
+                            j += 1
+                        note_seq_new.append('rest')
+                        note_dur_new.append(rest_dur)
+                        i = j
+                temp_dict['note_seq'] = note_seq_new
+                temp_dict['note_dur'] = note_dur_new
+
                 meta_data_dict[f'{ds_id}:{item_name}'] = temp_dict
         else:
             raise FileNotFoundError(
