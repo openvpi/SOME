@@ -146,7 +146,7 @@ class BaseBinarizer:
             self.process_dataset(
                 'train',
                 num_workers=int(self.binarization_args['num_workers']),
-                # apply_augmentation=False
+                apply_augmentation=True
             )
         except KeyboardInterrupt:
             exit(-1)
@@ -162,7 +162,7 @@ class BaseBinarizer:
         total_raw_sec = 0
 
         for item_name, meta_data in self.meta_data_iterator(prefix):
-            args.append([item_name, meta_data, self.binarization_args])
+            args.append([item_name, meta_data, apply_augmentation])
 
         def postprocess(_item, _is_raw=True):
             nonlocal total_sec, total_raw_sec
@@ -205,5 +205,5 @@ class BaseBinarizer:
         else:
             print(f'| {prefix} total duration: {total_raw_sec:.2f}s')
 
-    def process_item(self, item_name, meta_data, binarization_args):
+    def process_item(self, item_name, meta_data, allow_aug=False):
         raise NotImplementedError()
