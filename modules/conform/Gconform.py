@@ -7,7 +7,15 @@ from einops import rearrange
 
 from modules.attention.base_attention import Attention
 from modules.conv.base_conv import conform_conv
+class GLU(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
 
+    def forward(self, x):
+        out, gate = x.chunk(2, dim=self.dim)
+
+        return out * gate.sigmoid()
 
 class conform_ffn(nn.Module):
     def __init__(self, dim, DropoutL1: float = 0.1, DropoutL2: float = 0.1):
@@ -57,7 +65,31 @@ class conform_blocke(nn.Module):
         # return x
 
 
-class midi_conform(nn.Module):
+class Gcf(nn.Module):
+    def __init__(self,dim: int, kernel_size: int = 31, conv_drop: float = 0.1, ffn_latent_drop: float = 0.1,
+                 ffn_out_drop: float = 0.1, attention_drop: float = 0.1, attention_heads: int = 4,
+                 attention_heads_dim: int = 64):
+        super().__init__()
+        self.att1=conform_blocke(dim=dim, kernel_size=kernel_size, conv_drop=conv_drop, ffn_latent_drop=ffn_latent_drop,
+                            ffn_out_drop=ffn_out_drop, attention_drop=attention_drop, attention_heads=attention_heads,
+                            attention_heads_dim=attention_heads_dim)
+        self.att2 = conform_blocke(dim=dim, kernel_size=kernel_size, conv_drop=conv_drop, ffn_latent_drop=ffn_latent_drop,
+                            ffn_out_drop=ffn_out_drop, attention_drop=attention_drop, attention_heads=attention_heads,
+                            attention_heads_dim=attention_heads_dim)
+        self.glu1=nn.Sequential(nn.Linear(dim, dim*2),GLU(2) )
+        self.glu2 = nn.Sequential(nn.Linear(dim, dim * 2), GLU(2))
+
+    def forward(self, midi,bound):
+        midi=self.att1(midi)
+        bound=self.att2(bound)
+        midis=self.glu1(midi)
+        bounds=self.glu2(bound)
+        return midi+bounds,bound+midis
+
+
+
+
+class Gmidi_conform(nn.Module):
     def __init__(self, lay: int, dim: int, indim: int, outdim: int, use_lay_skip: bool, kernel_size: int = 31,
                  conv_drop: float = 0.1,
                  ffn_latent_drop: float = 0.1,
@@ -66,40 +98,42 @@ class midi_conform(nn.Module):
         super().__init__()
         self.pitch_embed = nn.Linear(1, indim)
         self.inln = nn.Linear(indim, dim)
+        self.inln1 = nn.Linear(indim, dim)
         self.outln = nn.Linear(dim, outdim)
         self.cutheard = nn.Linear(dim, 1)
         # self.cutheard = nn.Linear(dim, outdim)
         self.lay = lay
         self.use_lay_skip = use_lay_skip
         self.cf_lay = nn.ModuleList(
-            [conform_blocke(dim=dim, kernel_size=kernel_size, conv_drop=conv_drop, ffn_latent_drop=ffn_latent_drop,
+            [Gcf(dim=dim, kernel_size=kernel_size, conv_drop=conv_drop, ffn_latent_drop=ffn_latent_drop,
                             ffn_out_drop=ffn_out_drop, attention_drop=attention_drop, attention_heads=attention_heads,
                             attention_heads_dim=attention_heads_dim) for _ in range(lay)])
-        if use_lay_skip:
-            self.skip_lay = nn.ModuleList([nn.Sequential(nn.Linear(dim, dim), nn.SiLU()) for _ in range(lay)])
-            self.lay_sc = 1 / sqrt(lay)
+        self.att1=conform_blocke(dim=dim, kernel_size=kernel_size, conv_drop=conv_drop, ffn_latent_drop=ffn_latent_drop,
+                            ffn_out_drop=ffn_out_drop, attention_drop=attention_drop, attention_heads=attention_heads,
+                            attention_heads_dim=attention_heads_dim)
+        self.att2 = conform_blocke(dim=dim, kernel_size=kernel_size, conv_drop=conv_drop, ffn_latent_drop=ffn_latent_drop,
+                            ffn_out_drop=ffn_out_drop, attention_drop=attention_drop, attention_heads=attention_heads,
+                            attention_heads_dim=attention_heads_dim)
+
 
     def forward(self, x, pitch, mask=None):
-        layskip = 0
-        # torch.masked_fill()
 
+        # torch.masked_fill()
+        x1=x.clone()
 
         x = self.inln(x )
+        x1=self.inln1(x1)
         if mask is not None:
             x = x.masked_fill(~mask.unsqueeze(-1), 0)
         for idx, i in enumerate(self.cf_lay):
-            x = i(x)
-            if self.use_lay_skip:
-                layskip += self.skip_lay[idx](x)
+            x,x1 = i(x,x1)
+
             if mask is not None:
                 x = x.masked_fill(~mask.unsqueeze(-1), 0)
-        if self.use_lay_skip:
-            layskip = layskip * self.lay_sc
-            cutprp = self.cutheard(layskip)
-            midiout = self.outln(x)
-        else:
-            cutprp = self.cutheard(x)
-            midiout = self.outln(x)
+        x,x1=self.att1(x),self.att2(x1)
+
+        cutprp = self.cutheard(x1)
+        midiout = self.outln(x)
         cutprp = torch.sigmoid(cutprp)
         cutprp = torch.squeeze(cutprp, -1)
         midiout = torch.sigmoid(midiout)

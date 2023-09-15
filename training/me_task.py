@@ -80,7 +80,7 @@ class MIDIExtractionTask(BaseTask):
 
     def build_losses_and_metrics(self):
         self.midi_loss = nn.BCELoss()
-        self.bound_loss = modules.losses.BinaryEMDLoss()
+        self.bound_loss = modules.losses.BinaryEMDLoss(bidirectional=True)
         self.register_metric('midi_acc', modules.metrics.MIDIAccuracy(tolerance=0.5))
 
     def run_model(self, sample, infer=False):
