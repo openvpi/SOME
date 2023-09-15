@@ -1,11 +1,13 @@
+import copy
 import csv
 import os
 import pathlib
+import random
 
 import librosa
 import numpy as np
-from scipy import interpolate
 import torch
+from scipy import interpolate
 
 import modules.contentvec
 import modules.rmvpe
@@ -36,6 +38,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
     def __init__(self, config: dict):
         super().__init__(config, data_attrs=MIDI_EXTRACTION_ITEM_ATTRIBUTES)
         self.lr = LengthRegulator().to(self.device)
+        self.key_shift_min, self.key_shift_max = self.config['key_shift_range']
 
     def load_meta_data(self, raw_data_dir: pathlib.Path, ds_id):
         meta_data_dict = {}
@@ -45,12 +48,34 @@ class MIDIExtractionBinarizer(BaseBinarizer):
             ):
                 item_name = utterance_label['name']
                 temp_dict = {
-                    'wav_fn': str(raw_data_dir / 'wavs' / f'{item_name}.wav'),
-                    'note_seq': utterance_label['note_seq'].split(),
-                    'note_dur': [float(x) for x in utterance_label['note_dur'].split()]
+                    'wav_fn': str(raw_data_dir / 'wavs' / f'{item_name}.wav')
                 }
-                assert len(temp_dict['note_seq']) == len(temp_dict['note_dur']), \
+                note_seq = utterance_label['note_seq'].split()
+                note_dur = [float(x) for x in utterance_label['note_dur'].split()]
+                assert len(note_seq) == len(note_dur), \
                     f'Lengths of note_seq and note_dur mismatch in \'{item_name}\'.'
+
+                # merge continuous rest notes
+                i = 0
+                note_seq_new = []
+                note_dur_new = []
+                while i < len(note_seq):
+                    if note_seq[i] != 'rest':
+                        note_seq_new.append(note_seq[i])
+                        note_dur_new.append(note_dur[i])
+                        i += 1
+                    else:
+                        j = i
+                        rest_dur = 0
+                        while j < len(note_seq) and note_seq[j] == 'rest':
+                            rest_dur += note_dur[j]
+                            j += 1
+                        note_seq_new.append('rest')
+                        note_dur_new.append(rest_dur)
+                        i = j
+                temp_dict['note_seq'] = note_seq_new
+                temp_dict['note_dur'] = note_dur_new
+
                 meta_data_dict[f'{ds_id}:{item_name}'] = temp_dict
         else:
             raise FileNotFoundError(
@@ -97,7 +122,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
         print(f'| save summary to \'{filename}\'')
 
     @torch.no_grad()
-    def process_item(self, item_name, meta_data, binarization_args):
+    def process_item(self, item_name, meta_data, allow_aug=False):
         waveform, _ = librosa.load(meta_data['wav_fn'], sr=self.config['audio_sample_rate'], mono=True)
         wav_tensor = torch.from_numpy(waveform).to(self.device)
 
@@ -114,7 +139,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
                     n_mel_channels=self.config['units_dim'], sampling_rate=self.config['audio_sample_rate'],
                     win_length=self.config['win_size'], hop_length=self.config['hop_size']
                 ).to(self.device)
-            units = mel_spec.forward(wav_tensor.unsqueeze(0)).transpose(1, 2).squeeze(0).cpu().numpy()
+            units = mel_spec(wav_tensor.unsqueeze(0)).transpose(1, 2).squeeze(0).cpu().numpy()
         else:
             raise NotImplementedError(f'Invalid units encoder: {units_encoder}')
         assert len(units.shape) == 2 and units.shape[1] == self.config['units_dim'], \
@@ -122,8 +147,6 @@ class MIDIExtractionBinarizer(BaseBinarizer):
         length = units.shape[0]
         seconds = length * self.config['hop_size'] / self.config['audio_sample_rate']
         processed_input = {
-            'name': item_name,
-            'wav_fn': meta_data['wav_fn'],
             'seconds': seconds,
             'length': length,
             'units': units
@@ -174,8 +197,23 @@ class MIDIExtractionBinarizer(BaseBinarizer):
         note_dur = torch.diff(note_acc, dim=0, prepend=torch.LongTensor([0]).to(self.device))
         processed_input['note_dur'] = note_dur.cpu().numpy()
         unit2note = get_mel2ph_torch(
-            self.lr, note_dur_sec, length, self.timestep, device=self.device
+            self.lr, note_dur_sec, processed_input['length'], self.timestep, device=self.device
         )
         processed_input['unit2note'] = unit2note.cpu().numpy()
 
-        return [processed_input]
+        items = [processed_input]
+        if not allow_aug:
+            return items
+
+        for _ in range(self.config['key_shift_factor']):
+            assert mel_spec is not None, 'Units encoder must be mel if augmentation is applied!'
+            key_shift = random.random() * (self.key_shift_max - self.key_shift_min) + self.key_shift_min
+            processed_input_aug = copy.deepcopy(processed_input)
+            processed_input_aug['units'] = mel_spec(
+                wav_tensor.unsqueeze(0), keyshift=key_shift
+            ).transpose(1, 2).squeeze(0).cpu().numpy()
+            processed_input_aug['pitch'] += key_shift
+            processed_input_aug['note_midi'] += key_shift
+            items.append(processed_input_aug)
+
+        return items

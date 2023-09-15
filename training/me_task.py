@@ -21,22 +21,15 @@ class MIDIExtractionDataset(BaseDataset):
         self.midi_deviation = self.config['midi_prob_deviation']
         self.interval = (self.midi_max - self.midi_min) / (self.num_bins - 1)  # align with centers of bins
         self.sigma = self.midi_deviation / self.interval
-        self.midi_shift_proportion = self.config['midi_shift_proportion']
-        self.midi_shift_min, self.midi_shift_max = self.config['midi_shift_range']
 
     def midi_to_bin(self, midi):
         return (midi - self.midi_min) / self.interval
 
     def collater(self, samples):
         batch = super().collater(samples)
-        midi_shifts = [
-            random.random() * (self.midi_shift_max - self.midi_shift_min) + self.midi_shift_min
-            if self.allow_aug and random.random() < self.midi_shift_proportion else 0
-            for _ in range(len(samples))
-        ]
         batch['units'] = collate_nd([s['units'] for s in samples])  # [B, T_s, C]
-        batch['pitch'] = collate_nd([s['pitch'] + d for s, d in zip(samples, midi_shifts)])  # [B, T_s]
-        batch['note_midi'] = collate_nd([s['note_midi'] + d for s, d in zip(samples, midi_shifts)])  # [B, T_n]
+        batch['pitch'] = collate_nd([s['pitch'] for s in samples])  # [B, T_s]
+        batch['note_midi'] = collate_nd([s['note_midi'] for s in samples])  # [B, T_n]
         batch['note_rest'] = collate_nd([s['note_rest'] for s in samples])  # [B, T_n]
         batch['note_dur'] = collate_nd([s['note_dur'] for s in samples])  # [B, T_n]
 
