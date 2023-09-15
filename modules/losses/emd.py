@@ -11,6 +11,6 @@ class BinaryEMDLoss(torch.nn.Module):
         # pred, gt: [B, T]
         loss = self.loss(pred.cumsum(dim=1), gt.cumsum(dim=1))
         if self.bidirectional:
-            loss += self.loss(pred.flip(dim=1).cumsum(dim=1), gt.flip(dim=1).cumsum(dim=1))
+            loss += self.loss(pred.flip(1).cumsum(dim=1), gt.flip(1).cumsum(dim=1))
             loss /= 2
         return loss
