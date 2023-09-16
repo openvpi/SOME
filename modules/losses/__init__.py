@@ -1,1 +1,1 @@
-from .emd import BinaryEMDLoss
+from .bound_loss import BinaryEMDLoss, BoundaryLoss

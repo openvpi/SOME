@@ -1,5 +1,3 @@
-import random
-
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -7,9 +5,9 @@ from torch import nn
 import modules.losses
 import modules.metrics
 from utils import build_object_from_class_name, collate_nd
-from .base_task import BaseDataset, BaseTask
 from utils.infer_utils import decode_gaussian_blurred_probs, decode_bounds_to_alignment, decode_item_sequence
 from utils.plot import boundary_to_figure, curve_to_figure, spec_to_figure, pitch_notes_to_figure
+from .base_task import BaseDataset, BaseTask
 
 
 class MIDIExtractionDataset(BaseDataset):
@@ -73,7 +71,8 @@ class MIDIExtractionTask(BaseTask):
 
     def build_losses_and_metrics(self):
         self.midi_loss = nn.BCELoss()
-        self.bound_loss = modules.losses.BinaryEMDLoss(bidirectional=True)
+        self.bound_loss = modules.losses.BoundaryLoss()
+        # self.bound_loss = modules.losses.BinaryEMDLoss(bidirectional=True)
         self.register_metric('midi_acc', modules.metrics.MIDIAccuracy(tolerance=0.5))
 
     def run_model(self, sample, infer=False):
