@@ -8,7 +8,7 @@ import modules.losses
 import modules.metrics
 from utils import build_object_from_class_name, collate_nd
 from .base_task import BaseDataset, BaseTask
-from utils.infer_utils import decode_gaussian_blurred_probs, decode_bounds_to_sequence
+from utils.infer_utils import decode_gaussian_blurred_probs, decode_bounds_to_alignment
 from utils.plot import boundary_to_figure, curve_to_figure, spec_to_figure
 
 
@@ -118,7 +118,7 @@ class MIDIExtractionTask(BaseTask):
             bounds *= masks
             self.plot_prob(batch_idx, sample['probs'], probs)
 
-            unit2note_pred = decode_bounds_to_sequence(bounds) * masks
+            unit2note_pred = decode_bounds_to_alignment(bounds) * masks
             dur_pred = unit2note_pred.new_zeros(1, unit2note_pred.max() + 1).scatter_add(
                 dim=1, index=unit2note_pred, src=torch.ones_like(unit2note_pred)
             )[:, 1:]

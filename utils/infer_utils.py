@@ -19,7 +19,7 @@ def decode_gaussian_blurred_probs(probs, vmin, vmax, deviation, threshold):
     return values, rest
 
 
-def decode_bounds_to_sequence(bounds):
+def decode_bounds_to_alignment(bounds):
     bounds_step = bounds.cumsum(dim=1).round().long()
     bounds_inc = torch.diff(
         bounds_step, dim=1, prepend=torch.full(
@@ -27,5 +27,29 @@ def decode_bounds_to_sequence(bounds):
             dtype=bounds_step.dtype, device=bounds_step.device
         )
     ) > 0
-    frame2seq = bounds_inc.long().cumsum(dim=1)
-    return frame2seq
+    frame2item = bounds_inc.long().cumsum(dim=1)
+    return frame2item
+
+
+def decode_item_sequence(frame2item, values, masks, threshold=0.5):
+    """
+
+    :param frame2item: [1, 1, 1, 1, 2, 2, 3, 3, 3]
+    :param values:
+    :param masks:
+    :param threshold: minimum ratio of unmasked frames required to be regarded as an unmasked item
+    :return: item_values, item_dur, item_masks
+    """
+    item_dur = frame2item.new_zeros(frame2item.shape[0], frame2item.max() + 1).scatter_add(
+        1, frame2item, torch.ones_like(frame2item)
+    )[:, 1:]
+    item_unmasked_dur = frame2item.new_zeros(frame2item.shape[0], frame2item.max() + 1).scatter_add(
+        1, frame2item, masks.long()
+    )[:, 1:]
+    item_masks = item_unmasked_dur / item_dur >= threshold
+    item_values = frame2item.new_zeros(
+        frame2item.shape[0], frame2item.max() + 1, dtype=values.dtype
+    ).scatter_add(
+        1, frame2item, values * masks
+    )[:, 1:] / (item_unmasked_dur + (item_unmasked_dur == 0))
+    return item_values, item_dur, item_masks
