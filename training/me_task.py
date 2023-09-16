@@ -8,8 +8,8 @@ import modules.losses
 import modules.metrics
 from utils import build_object_from_class_name, collate_nd
 from .base_task import BaseDataset, BaseTask
-from utils.infer_utils import decode_gaussian_blurred_probs, decode_bounds_to_alignment
-from utils.plot import boundary_to_figure, curve_to_figure, spec_to_figure
+from utils.infer_utils import decode_gaussian_blurred_probs, decode_bounds_to_alignment, decode_item_sequence
+from utils.plot import boundary_to_figure, curve_to_figure, spec_to_figure, pitch_notes_to_figure
 
 
 class MIDIExtractionDataset(BaseDataset):
@@ -131,6 +131,15 @@ class MIDIExtractionTask(BaseTask):
                 probs, vmin=self.midi_min, vmax=self.midi_max,
                 deviation=self.midi_deviation, threshold=self.rest_threshold
             )
+
+            note_midi_pred, note_dur_pred, note_rest_pred = decode_item_sequence(
+                unit2note_pred, midi_pred, ~rest_pred & masks
+            )
+            self.plot_final(
+                batch_idx, sample['note_midi'], sample['note_dur'], sample['note_rest'],
+                note_midi_pred, note_dur_pred, note_rest_pred, sample['pitch']
+            )
+
             midi_pred[rest_pred] = -torch.inf  # rest part is set to -inf
             note_midi_gt = sample['note_midi'].clone()
             note_midi_gt[sample['note_rest']] = -torch.inf
@@ -170,4 +179,17 @@ class MIDIExtractionTask(BaseTask):
         pitch = pitch[0].cpu().numpy()
         self.logger.experiment.add_figure(name, curve_to_figure(
             midi_gt, midi_pred, curve_base=pitch, grid=1, base_label='pitch'
+        ), self.global_step)
+
+    def plot_final(self, batch_idx, midi_gt, dur_gt, rest_gt, midi_pred, dur_pred, rest_pred, pitch):
+        name = f'final/{batch_idx}'
+        midi_gt = midi_gt[0].cpu().numpy()
+        midi_pred = midi_pred[0].cpu().numpy()
+        dur_gt = dur_gt[0].cpu().numpy()
+        dur_pred = dur_pred[0].cpu().numpy()
+        rest_gt = rest_gt[0].cpu().numpy()
+        rest_pred = rest_pred[0].cpu().numpy()
+        self.logger.experiment.add_figure(name, pitch_notes_to_figure(
+            pitch=pitch, note_midi_gt=midi_gt, note_dur_gt=dur_gt, note_rest_gt=rest_gt,
+            note_midi_pred=midi_pred, note_dur_pred=dur_pred, note_rest_pred=rest_pred
         ), self.global_step)

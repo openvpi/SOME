@@ -66,36 +66,34 @@ def boundary_to_figure(
     return fig
 
 
-def pitch_note_to_figure(pitch_gt, pitch_pred=None, note_midi=None, note_dur=None, note_rest=None):
-    if isinstance(pitch_gt, torch.Tensor):
-        pitch_gt = pitch_gt.cpu().numpy()
-    if isinstance(pitch_pred, torch.Tensor):
-        pitch_pred = pitch_pred.cpu().numpy()
-    if isinstance(note_midi, torch.Tensor):
-        note_midi = note_midi.cpu().numpy()
-    if isinstance(note_dur, torch.Tensor):
-        note_dur = note_dur.cpu().numpy()
-    if isinstance(note_rest, torch.Tensor):
-        note_rest = note_rest.cpu().numpy()
+def pitch_notes_to_figure(
+        pitch, note_midi_gt, note_dur_gt, note_rest_gt,
+        note_midi_pred=None, note_dur_pred=None, note_rest_pred=None
+):
     fig = plt.figure()
-    if note_midi is not None and note_dur is not None:
+
+    def draw_notes(note_midi, note_dur, note_rest, color, hatch, label):
         note_dur_acc = np.cumsum(note_dur)
         if note_rest is None:
             note_rest = np.zeros_like(note_midi, dtype=np.bool_)
+        labeled = False
         for i in range(len(note_midi)):
-            # if note_rest[i]:
-            #     continue
-            plt.gca().add_patch(
-                plt.Rectangle(
-                    xy=(note_dur_acc[i - 1] if i > 0 else 0, note_midi[i] - 0.5),
-                    width=note_dur[i], height=1,
-                    edgecolor='grey', fill=False,
-                    linewidth=1.5, linestyle='--' if note_rest[i] else '-'
-                )
+            if note_rest[i]:
+                continue
+            rec = plt.Rectangle(
+                xy=(note_dur_acc[i - 1] if i > 0 else 0, note_midi[i] - 0.5),
+                width=note_dur[i], height=1,
+                edgecolor=color, fill=False,
+                linewidth=1.5, label=label if not labeled else None,
+                # linestyle='--' if note_rest[i] else '-'
             )
-    plt.plot(pitch_gt, color='b', label='gt')
-    if pitch_pred is not None:
-        plt.plot(pitch_pred, color='r', label='pred')
+            rec.set_hatch(hatch)
+            plt.gca().add_patch(rec)
+            labeled = True
+
+    plt.plot(pitch, color='grey', label='pitch')
+    draw_notes(note_midi_gt, note_dur_gt, note_rest_gt, color='b', hatch='x', label='gt')
+    draw_notes(note_midi_pred, note_dur_pred, note_rest_pred, color='r', hatch='\\', label='pred')
     plt.gca().yaxis.set_major_locator(MultipleLocator(1))
     plt.grid(axis='y')
     plt.legend()
