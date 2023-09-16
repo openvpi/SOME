@@ -5,7 +5,7 @@ from torch import nn
 import modules.losses
 import modules.metrics
 from utils import build_object_from_class_name, collate_nd
-from utils.infer_utils import decode_gaussian_blurred_probs, decode_bounds_to_alignment, decode_item_sequence
+from utils.infer_utils import decode_gaussian_blurred_probs, decode_bounds_to_alignment, decode_note_sequence
 from utils.plot import boundary_to_figure, curve_to_figure, spec_to_figure, pitch_notes_to_figure
 from .base_task import BaseDataset, BaseTask
 
@@ -131,7 +131,7 @@ class MIDIExtractionTask(BaseTask):
                 deviation=self.midi_deviation, threshold=self.rest_threshold
             )
 
-            note_midi_pred, note_dur_pred, note_mask_pred = decode_item_sequence(
+            note_midi_pred, note_dur_pred, note_mask_pred = decode_note_sequence(
                 unit2note_pred, midi_pred, ~rest_pred & masks
             )
             note_rest_pred = ~note_mask_pred

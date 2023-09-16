@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 
 
 def decode_gaussian_blurred_probs(probs, vmin, vmax, deviation, threshold):
@@ -31,7 +32,7 @@ def decode_bounds_to_alignment(bounds):
     return frame2item
 
 
-def decode_item_sequence(frame2item, values, masks, threshold=0.5):
+def decode_note_sequence(frame2item, values, masks, threshold=0.5):
     """
 
     :param frame2item: [1, 1, 1, 1, 2, 2, 3, 3, 3]
@@ -47,9 +48,32 @@ def decode_item_sequence(frame2item, values, masks, threshold=0.5):
         1, frame2item, masks.long()
     )[:, 1:]
     item_masks = item_unmasked_dur / item_dur >= threshold
-    item_values = frame2item.new_zeros(
-        frame2item.shape[0], frame2item.max() + 1, dtype=values.dtype
-    ).scatter_add(
-        1, frame2item, values * masks
-    )[:, 1:] / (item_unmasked_dur + (item_unmasked_dur == 0))
+
+    values_quant = values.round().long()
+    histogram = frame2item.new_zeros(frame2item.shape[0], (frame2item.max() + 1) * 128).scatter_add(
+        1, frame2item * 128 + values_quant, torch.ones_like(frame2item) * masks
+    ).unflatten(1, [frame2item.max() + 1, 128])[:, 1:, :]
+    item_values_center = histogram.argmax(dim=2).to(dtype=values.dtype)
+    values_center = torch.gather(F.pad(item_values_center, [1, 0]), 1, frame2item)
+    values_near_center = masks & (values >= values_center - 0.5) & (values <= values_center + 0.5)
+    item_valid_dur = frame2item.new_zeros(frame2item.shape[0], frame2item.max() + 1).scatter_add(
+        1, frame2item, values_near_center.long()
+    )[:, 1:]
+    item_values = values.new_zeros(frame2item.shape[0], frame2item.max() + 1).scatter_add(
+        1, frame2item, values * values_near_center
+    )[:, 1:] / (item_valid_dur + (item_valid_dur == 0))
+
     return item_values, item_dur, item_masks
+#
+#
+# if __name__ == '__main__':
+#     frame2item = torch.LongTensor([
+#         [1, 1, 1, 1, 2, 2, 3, 3, 3, 0, 0, 0, 0, 0],
+#         [1, 1, 1, 2, 3, 3, 3, 3, 3, 4, 4, 0, 0, 0]
+#     ])
+#     values = torch.FloatTensor([
+#         [60, 61, 60.5, 63, 57, 57, 50, 55, 54, 0, 0, 0, 0, 0],
+#         [50, 51, 50.5, 53, 47, 47, 40, 45, 44, 38, 38, 0, 0, 0]
+#     ])
+#     masks = frame2item > 0
+#     decode_note_sequence(frame2item, values, masks)
