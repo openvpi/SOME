@@ -132,9 +132,10 @@ class MIDIExtractionTask(BaseTask):
                 deviation=self.midi_deviation, threshold=self.rest_threshold
             )
 
-            note_midi_pred, note_dur_pred, note_rest_pred = decode_item_sequence(
+            note_midi_pred, note_dur_pred, note_mask_pred = decode_item_sequence(
                 unit2note_pred, midi_pred, ~rest_pred & masks
             )
+            note_rest_pred = ~note_mask_pred
             self.plot_final(
                 batch_idx, sample['note_midi'], sample['note_dur'], sample['note_rest'],
                 note_midi_pred, note_dur_pred, note_rest_pred, sample['pitch']
