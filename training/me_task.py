@@ -118,23 +118,18 @@ class MIDIExtractionTask(BaseTask):
             self.plot_prob(batch_idx, sample['probs'], probs)
 
             unit2note_pred = decode_bounds_to_alignment(bounds) * masks
-            dur_pred = unit2note_pred.new_zeros(1, unit2note_pred.max() + 1).scatter_add(
-                dim=1, index=unit2note_pred, src=torch.ones_like(unit2note_pred)
-            )[:, 1:]
-            self.plot_boundary(
-                batch_idx, bounds_gt=sample['bounds'], bounds_pred=bounds,
-                dur_gt=sample['note_dur'], dur_pred=dur_pred
-            )
-
             midi_pred, rest_pred = decode_gaussian_blurred_probs(
                 probs, vmin=self.midi_min, vmax=self.midi_max,
                 deviation=self.midi_deviation, threshold=self.rest_threshold
             )
-
             note_midi_pred, note_dur_pred, note_mask_pred = decode_note_sequence(
                 unit2note_pred, midi_pred, ~rest_pred & masks
             )
             note_rest_pred = ~note_mask_pred
+            self.plot_boundary(
+                batch_idx, bounds_gt=sample['bounds'], bounds_pred=bounds,
+                dur_gt=sample['note_dur'], dur_pred=note_dur_pred
+            )
             self.plot_final(
                 batch_idx, sample['note_midi'], sample['note_dur'], sample['note_rest'],
                 note_midi_pred, note_dur_pred, note_rest_pred, sample['pitch']
