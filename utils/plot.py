@@ -72,7 +72,7 @@ def pitch_notes_to_figure(
 ):
     fig = plt.figure()
 
-    def draw_notes(note_midi, note_dur, note_rest, color, hatch, label):
+    def draw_notes(note_midi, note_dur, note_rest, color, label):
         note_dur_acc = np.cumsum(note_dur)
         if note_rest is None:
             note_rest = np.zeros_like(note_midi, dtype=np.bool_)
@@ -80,20 +80,22 @@ def pitch_notes_to_figure(
         for i in range(len(note_midi)):
             if note_rest[i]:
                 continue
+            x0 = note_dur_acc[i - 1] if i > 0 else 0
+            y0 = note_midi[i] - 0.5
             rec = plt.Rectangle(
-                xy=(note_dur_acc[i - 1] if i > 0 else 0, note_midi[i] - 0.5),
+                xy=(x0, y0),
                 width=note_dur[i], height=1,
                 edgecolor=color, fill=False,
                 linewidth=1.5, label=label if not labeled else None,
                 # linestyle='--' if note_rest[i] else '-'
             )
-            rec.set_hatch(hatch)
             plt.gca().add_patch(rec)
+            plt.fill_between([x0, x0 + note_dur[i]], y0, y0 + 1, color='none', facecolor=color, alpha=0.2)
             labeled = True
 
+    draw_notes(note_midi_gt, note_dur_gt, note_rest_gt, color='b', label='gt')
+    draw_notes(note_midi_pred, note_dur_pred, note_rest_pred, color='r', label='pred')
     plt.plot(pitch, color='grey', label='pitch')
-    draw_notes(note_midi_gt, note_dur_gt, note_rest_gt, color='b', hatch='x', label='gt')
-    draw_notes(note_midi_pred, note_dur_pred, note_rest_pred, color='r', hatch='\\', label='pred')
     plt.gca().yaxis.set_major_locator(MultipleLocator(1))
     plt.grid(axis='y')
     plt.legend()

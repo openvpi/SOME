@@ -189,6 +189,7 @@ class MIDIExtractionTask(BaseTask):
         dur_pred = dur_pred[0].cpu().numpy()
         rest_gt = rest_gt[0].cpu().numpy()
         rest_pred = rest_pred[0].cpu().numpy()
+        pitch = pitch[0].cpu().numpy()
         self.logger.experiment.add_figure(name, pitch_notes_to_figure(
             pitch=pitch, note_midi_gt=midi_gt, note_dur_gt=dur_gt, note_rest_gt=rest_gt,
             note_midi_pred=midi_pred, note_dur_pred=dur_pred, note_rest_pred=rest_pred
