@@ -11,11 +11,11 @@ class BinaryEMDLoss(torch.nn.Module):
 
     def forward(self, pred, gt):
         # pred, gt: [B, T]
-        loss = self.loss(pred.cumsum(dim=1), gt.cumsum(dim=1))
+        scale = torch.sqrt(gt.shape[1])
+        loss = self.loss(pred.cumsum(dim=1) / scale, gt.cumsum(dim=1) / scale)
         if self.bidirectional:
-            loss += self.loss(pred.flip(1).cumsum(dim=1), gt.flip(1).cumsum(dim=1))
+            loss += self.loss(pred.flip(1).cumsum(dim=1) / scale, gt.flip(1).cumsum(dim=1) / scale)
             loss /= 2
-        loss = loss / (sqrt(len(gt[0])))
         return loss
 
 
