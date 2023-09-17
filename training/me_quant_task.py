@@ -92,7 +92,7 @@ class QuantizedMIDIExtractionTask(MIDIExtractionTask):
             midi_pred = probs.argmax(dim=-1)
             rest_pred = midi_pred == 128
             note_midi_pred, note_dur_pred, note_mask_pred = decode_note_sequence(
-                unit2note_pred, midi_pred, ~rest_pred & masks
+                unit2note_pred, midi_pred.clip(min=0, max=127), ~rest_pred & masks
             )
             note_rest_pred = ~note_mask_pred
             self.plot_boundary(
