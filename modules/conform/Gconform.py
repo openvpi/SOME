@@ -96,7 +96,7 @@ class Gmidi_conform(nn.Module):
                  ffn_out_drop: float = 0.1, attention_drop: float = 0.1, attention_heads: int = 4,
                  attention_heads_dim: int = 64):
         super().__init__()
-        self.pitch_embed = nn.Linear(1, indim)
+
         self.inln = nn.Linear(indim, dim)
         self.inln1 = nn.Linear(indim, dim)
         self.outln = nn.Linear(dim, outdim)
