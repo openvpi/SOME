@@ -1,3 +1,5 @@
+from math import sqrt
+
 import torch.nn
 
 
@@ -13,6 +15,7 @@ class BinaryEMDLoss(torch.nn.Module):
         if self.bidirectional:
             loss += self.loss(pred.flip(1).cumsum(dim=1), gt.flip(1).cumsum(dim=1))
             loss /= 2
+        loss = loss / (sqrt(len(gt[0])))
         return loss
 
 
