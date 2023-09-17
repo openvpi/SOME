@@ -6,18 +6,18 @@ import pathlib
 import random
 
 import librosa
+import numpy as np
 import torch
 
 import modules.contentvec
 import modules.rmvpe
-from .me_binarizer import MIDIExtractionBinarizer, mel_spec
+from .me_binarizer import MIDIExtractionBinarizer
 
 os.environ["OMP_NUM_THREADS"] = "1"
 QUANTIZED_MIDI_EXTRACTION_ITEM_ATTRIBUTES = [
     'units',  # contentvec units, float32[T_s, 256]
     'pitch',  # actual pitch in semitones, float32[T_s,]
-    'note_midi',  # note-level MIDI pitch, int64[T_n,]
-    'note_rest',  # flags for rest notes, bool[T_n,]
+    'note_midi',  # note-level MIDI pitch (0-127: MIDI, 128: rest) int64[T_n,]
     'note_dur',  # durations of notes, in number of frames, int64[T_n,]
     'unit2note',  # mel2ph format for alignment between units and notes
 ]
@@ -41,7 +41,7 @@ class QuantizedMIDIExtractionBinarizer(MIDIExtractionBinarizer):
                         ds = ds[0]
                 note_seq = [
                     librosa.midi_to_note(
-                        librosa.note_to_midi(n, round_midi=True), unicode=False
+                        np.clip(librosa.note_to_midi(n, round_midi=True), a_min=0, a_max=127), unicode=False
                     ) if n != 'rest' else 'rest'
                     for n in ds['note_seq'].split()
                 ]
@@ -95,10 +95,12 @@ class QuantizedMIDIExtractionBinarizer(MIDIExtractionBinarizer):
         waveform, _ = librosa.load(meta_data['wav_fn'], sr=self.config['audio_sample_rate'], mono=True)
 
         processed_input = self._process_item(waveform, meta_data, round_midi=True)
+        processed_input['note_midi'][processed_input['note_rest']] = 128
         items = [processed_input]
         if not allow_aug:
             return items
 
+        from .me_binarizer import mel_spec
         wav_tensor = torch.from_numpy(waveform).to(self.device)
         for _ in range(self.config['key_shift_factor']):
             assert mel_spec is not None, 'Units encoder must be mel if augmentation is applied!'
@@ -109,7 +111,7 @@ class QuantizedMIDIExtractionBinarizer(MIDIExtractionBinarizer):
                 wav_tensor.unsqueeze(0), keyshift=key_shift
             ).transpose(1, 2).squeeze(0).cpu().numpy()
             processed_input_aug['pitch'] += key_shift
-            processed_input_aug['note_midi'] += key_shift
+            processed_input_aug['note_midi'][~processed_input_aug['note_rest']] += key_shift
             items.append(processed_input_aug)
 
         return items

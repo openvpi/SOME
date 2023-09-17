@@ -180,7 +180,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
 
         note_midi = np.array(
             [(librosa.note_to_midi(n, round_midi=round_midi) if n != 'rest' else -1) for n in meta_data['note_seq']],
-            dtype=np.float32
+            dtype=np.int64 if round_midi else np.float32
         )
         note_rest = note_midi < 0
         interp_func = interpolate.interp1d(

@@ -17,7 +17,6 @@ class QuantizedMIDIExtractionDataset(BaseDataset):
         batch['units'] = collate_nd([s['units'] for s in samples])  # [B, T_s, C]
         batch['pitch'] = collate_nd([s['pitch'] for s in samples])  # [B, T_s]
         batch['note_midi'] = collate_nd([s['note_midi'] for s in samples], pad_value=-1)  # [B, T_n]
-        batch['note_rest'] = collate_nd([s['note_rest'] for s in samples])  # [B, T_n]
         batch['note_dur'] = collate_nd([s['note_dur'] for s in samples])  # [B, T_n]
         unit2note = collate_nd([s['unit2note'] for s in samples])
         batch['unit2note'] = unit2note
