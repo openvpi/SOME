@@ -163,3 +163,5 @@ cython_debug/
 /data/
 /experiments/
 /pretrained/
+*.mid
+*.wav
