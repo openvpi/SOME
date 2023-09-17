@@ -41,7 +41,6 @@ def infer(model, wav, midi):
     chunks = slicer.slice(waveform)
     midis = infer_ins.infer([c['waveform'] for c in chunks])
 
-    # TODO: write MIDI
     midi_path = pathlib.Path(midi) if midi is not None else wav_path.with_suffix('.mid')
     midi_file = mido.MidiFile(charset='utf8')
     midi_track = mido.MidiTrack()
