@@ -31,7 +31,7 @@ class midi_conforms(nn.Module):
 
         midi,bound=self.model(x, f0, mask)
         if softmax:
-            midi=F.softmax(midi,dim=1)
+            midi=F.softmax(midi,dim=2)
 
 
         return midi,bound
