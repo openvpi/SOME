@@ -94,8 +94,9 @@ class Gmidi_conform(nn.Module):
                  conv_drop: float = 0.1,
                  ffn_latent_drop: float = 0.1,
                  ffn_out_drop: float = 0.1, attention_drop: float = 0.1, attention_heads: int = 4,
-                 attention_heads_dim: int = 64):
+                 attention_heads_dim: int = 64,sig:bool=True):
         super().__init__()
+        self.sig=sig
 
         self.inln = nn.Linear(indim, dim)
         self.inln1 = nn.Linear(indim, dim)
@@ -136,5 +137,6 @@ class Gmidi_conform(nn.Module):
         midiout = self.outln(x)
         cutprp = torch.sigmoid(cutprp)
         cutprp = torch.squeeze(cutprp, -1)
-        midiout = torch.sigmoid(midiout)
+        if  self.sig:
+            midiout = torch.sigmoid(midiout)
         return midiout, cutprp
