@@ -54,6 +54,8 @@ class MIDIExtractionBinarizer(BaseBinarizer):
                 note_dur = [float(x) for x in utterance_label['note_dur'].split()]
                 assert len(note_seq) == len(note_dur), \
                     f'Lengths of note_seq and note_dur mismatch in \'{item_name}\'.'
+                assert any([note != 'rest' for note in note_seq]), \
+                    f'All notes are rest in \'{item_name}\'.'
 
                 # merge continuous rest notes
                 i = 0
