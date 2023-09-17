@@ -7,9 +7,9 @@ binarization_args:
   shuffle: true
 valid_set_name: valid
 train_set_name: train
-#use_buond_loss: false
+use_buond_loss: false
 use_midi_loss: true
-use_buond_loss: true
+#use_buond_loss: true
 
 hop_size: 512  # 320
 win_size: 2048
@@ -28,7 +28,7 @@ pe_ckpt: pretrained/rmvpe/model.pt
 # global constants
 midi_min: 0
 midi_max: 128
-midi_prob_deviation: 0.5
+midi_prob_deviation: 0.1
 rest_threshold: 0.1
 
 # neural networks

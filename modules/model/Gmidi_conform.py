@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 from modules.conform.Gconform import Gmidi_conform
 
 
@@ -27,8 +27,14 @@ class midi_conforms(nn.Module):
         cfg.update({'indim': config['units_dim'], 'outdim': config['midi_num_bins']})
         self.model = Gmidi_conform(**cfg)
 
-    def forward(self, x, f0, mask=None):
-        return self.model(x, f0, mask)
+    def forward(self, x, f0, mask=None,softmax=False):
+
+        midi,bound=self.model(x, f0, mask)
+        if softmax:
+            midi=F.softmax(midi,dim=1)
+
+
+        return midi,bound
 
     def get_loss(self):
         return midi_loss()
