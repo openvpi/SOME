@@ -76,7 +76,7 @@ class Slicer:
         else:
             samples = waveform
         if (samples.shape[0] + self.hop_size - 1) // self.hop_size <= self.min_length:
-            return [waveform]
+            return [{'offset': 0, 'waveform': waveform}]
         rms_list = get_rms(y=samples, frame_length=self.win_size, hop_length=self.hop_size).squeeze(0)
         sil_tags = []
         silence_start = None
@@ -133,7 +133,7 @@ class Slicer:
             sil_tags.append((pos, total_frames + 1))
         # Apply and return slices.
         if len(sil_tags) == 0:
-            return [waveform]
+            return [{'offset': 0, 'waveform': waveform}]
         else:
             chunks = []
             if sil_tags[0][0] > 0:
