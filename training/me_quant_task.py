@@ -57,7 +57,7 @@ class QuantizedMIDIExtractionTask(MIDIExtractionTask):
         # mask=None
 
         f0 = sample['pitch']
-        probs, bounds = self.model(x=spec, f0=f0, mask=mask, softmax=True)
+        probs, bounds = self.model(x=spec, f0=f0, mask=mask, softmax=infer)
 
         if infer:
             return probs, bounds
