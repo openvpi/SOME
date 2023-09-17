@@ -1,7 +1,7 @@
 # preprocessing
 binarizer_cls: preprocessing.MIDIExtractionBinarizer
 raw_data_dir: []
-binary_data_dir: data/some_dataset_mel/binary
+binary_data_dir: data/some_ds_quant_spk4_aug8/binary
 binarization_args:
   num_workers: 0
   shuffle: true
@@ -11,10 +11,12 @@ use_buond_loss: true
 use_midi_loss: true
 
 
-hop_size: 160  # 320
-win_size: 1024
-audio_sample_rate: 16000
-test_prefixes:
+hop_size: 512  # 320
+win_size: 2048
+audio_sample_rate: 44100
+fmin: 40
+fmax: 8000
+test_prefixes: []
 units_encoder: mel  # contentvec768l12
 units_encoder_ckpt: pretrained/contentvec/checkpoint_best_legacy_500.pt
 pe: rmvpe

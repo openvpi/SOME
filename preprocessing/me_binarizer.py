@@ -136,7 +136,8 @@ class MIDIExtractionBinarizer(BaseBinarizer):
             if mel_spec is None:
                 mel_spec = modules.rmvpe.MelSpectrogram(
                     n_mel_channels=self.config['units_dim'], sampling_rate=self.config['audio_sample_rate'],
-                    win_length=self.config['win_size'], hop_length=self.config['hop_size']
+                    win_length=self.config['win_size'], hop_length=self.config['hop_size'],
+                    mel_fmin=self.config['fmin'], mel_fmax=self.config['fmax']
                 ).to(self.device)
             units = mel_spec(wav_tensor.unsqueeze(0)).transpose(1, 2).squeeze(0).cpu().numpy()
         else:
