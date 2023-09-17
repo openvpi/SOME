@@ -1,5 +1,5 @@
 # preprocessing
-binarizer_cls: preprocessing.MIDIExtractionBinarizer
+binarizer_cls: preprocessing.QuantizedMIDIExtractionBinarizer
 raw_data_dir: []
 binary_data_dir: data/some_dataset_mel/binary
 binarization_args:
@@ -50,7 +50,7 @@ midi_extractor_args:
   attention_heads_dim: 64
 
 # training
-task_cls: training.MIDIExtractionTask
+task_cls: training.QuantizedMIDIExtractionTask
 optimizer_args:
   optimizer_cls: torch.optim.AdamW
   lr: 0.0001
@@ -90,7 +90,6 @@ permanent_ckpt_interval: 40000
 # pytorch lightning
 # Read https://lightning.ai/docs/pytorch/stable/common/trainer.html#trainer-class-api for possible values
 ###########
-#pl_trainer_accelerator: 'cpu'
 pl_trainer_accelerator: 'auto'
 pl_trainer_devices: 'auto'
 pl_trainer_precision: '32-true'

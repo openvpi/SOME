@@ -123,11 +123,8 @@ class MIDIExtractionBinarizer(BaseBinarizer):
                     pad_inches=0.25)
         print(f'| save summary to \'{filename}\'')
 
-    @torch.no_grad()
-    def process_item(self, item_name, meta_data, allow_aug=False):
-        waveform, _ = librosa.load(meta_data['wav_fn'], sr=self.config['audio_sample_rate'], mono=True)
+    def _process_item(self, waveform, meta_data, round_midi=False):
         wav_tensor = torch.from_numpy(waveform).to(self.device)
-
         units_encoder = self.config['units_encoder']
         if units_encoder == 'contentvec768l12':
             global contentvec
@@ -182,7 +179,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
         processed_input['pitch'] = pitch
 
         note_midi = np.array(
-            [(librosa.note_to_midi(n, round_midi=False) if n != 'rest' else -1) for n in meta_data['note_seq']],
+            [(librosa.note_to_midi(n, round_midi=round_midi) if n != 'rest' else -1) for n in meta_data['note_seq']],
             dtype=np.float32
         )
         note_rest = note_midi < 0
@@ -202,15 +199,23 @@ class MIDIExtractionBinarizer(BaseBinarizer):
             self.lr, note_dur_sec, processed_input['length'], self.timestep, device=self.device
         )
         processed_input['unit2note'] = unit2note.cpu().numpy()
+        return processed_input
 
+    @torch.no_grad()
+    def process_item(self, item_name, meta_data, allow_aug=False):
+        waveform, _ = librosa.load(meta_data['wav_fn'], sr=self.config['audio_sample_rate'], mono=True)
+
+        processed_input = self._process_item(waveform, meta_data)
         items = [processed_input]
         if not allow_aug:
             return items
 
+        wav_tensor = torch.from_numpy(waveform).to(self.device)
         for _ in range(self.config['key_shift_factor']):
             assert mel_spec is not None, 'Units encoder must be mel if augmentation is applied!'
             key_shift = random.random() * (self.key_shift_max - self.key_shift_min) + self.key_shift_min
             processed_input_aug = copy.deepcopy(processed_input)
+            assert isinstance(mel_spec, modules.rmvpe.MelSpectrogram)
             processed_input_aug['units'] = mel_spec(
                 wav_tensor.unsqueeze(0), keyshift=key_shift
             ).transpose(1, 2).squeeze(0).cpu().numpy()
