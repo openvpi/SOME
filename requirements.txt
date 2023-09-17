@@ -9,6 +9,7 @@ h5py
 librosa<0.10.0
 lightning>=2.0.0
 matplotlib
+mido
 MonkeyType==23.3.0
 numpy  # ==1.23.5
 onnx==1.14.0
