@@ -10,11 +10,6 @@ from utils import print_config
 from utils.infer_utils import build_midi_file
 from utils.slicer2 import Slicer
 
-task_inference_mapping = {
-    'training.MIDIExtractionTask': 'inference.MIDIExtractionInference',
-    'training.QuantizedMIDIExtractionTask': 'inference.QuantizedMIDIExtractionInference',
-}
-
 
 @click.command(help='Run inference with a trained model')
 @click.option('--model', required=True, metavar='CKPT_PATH', help='Path to the model checkpoint (*.ckpt)')
@@ -25,13 +20,13 @@ def infer(model, wav, midi):
     with open(model_path.with_name('config.yaml'), 'r', encoding='utf8') as f:
         config = yaml.safe_load(f)
     print_config(config)
-    infer_cls = task_inference_mapping[config['task_cls']]
+    infer_cls = inference.task_inference_mapping[config['task_cls']]
 
     pkg = ".".join(infer_cls.split(".")[:-1])
     cls_name = infer_cls.split(".")[-1]
     infer_cls = getattr(importlib.import_module(pkg), cls_name)
     assert issubclass(infer_cls, inference.BaseInference), \
-        f'Binarizer class {infer_cls} is not a subclass of {inference.BaseInference}.'
+        f'Inference class {infer_cls} is not a subclass of {inference.BaseInference}.'
     infer_ins = infer_cls(config=config, model_path=model_path)
 
     wav_path = pathlib.Path(wav)
