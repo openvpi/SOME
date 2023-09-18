@@ -33,10 +33,10 @@ def infer(model_rel_path, input_audio_path):
         assert issubclass(infer_cls, inference.BaseInference), \
             f'Binarizer class {infer_cls} is not a subclass of {inference.BaseInference}.'
         infer_ins = infer_cls(config=config, model_path=model_path)
+        print(f"Initialized: {infer_ins}")
         _infer_instances[model_rel_path] = (infer_ins, config)
     else:
         infer_ins, config = _infer_instances[model_rel_path]
-    print(f"Initialized: {infer_ins}")
 
     input_audio_path = pathlib.Path(input_audio_path)
     total_duration = librosa.get_duration(filename=input_audio_path)
@@ -92,7 +92,7 @@ def webui(port, work_dir):
                 label="Model Checkpoint", choices=choices, value=choices[0],
                 multiselect=False, allow_custom_value=False
             ),
-            gr.components.Audio(label="Input Audio File", type="filepath"),
+            gr.components.Audio(label="Input Audio File", type="filepath", max_file_size=1024),
         ],
         outputs=[
             gr.components.File(label="Output MIDI File", file_types=['.mid']),
