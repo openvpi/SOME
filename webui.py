@@ -20,7 +20,7 @@ _infer_instances: Dict[str, Tuple[BaseInference, dict]] = {}  # dict mapping mod
 
 def infer(model_rel_path, input_audio_path):
     if not model_rel_path or not input_audio_path:
-        return "Required inputs not specified.", ""
+        return None, "Error: required inputs not specified."
     if model_rel_path not in _infer_instances:
         model_path = _work_dir / model_rel_path
         with open(model_path.with_name('config.yaml'), 'r', encoding='utf8') as f:
@@ -40,13 +40,13 @@ def infer(model_rel_path, input_audio_path):
 
     input_audio_path = pathlib.Path(input_audio_path)
     total_duration = librosa.get_duration(filename=input_audio_path)
-    if total_duration >= 20 * 60:  # 20 minutes
-        return f"The input audio is too long ({total_duration} seconds). Please upload audio under 20 minutes.", ""
+    if total_duration > 20 * 60:  # 20 minutes
+        return None, f"Error: the input audio is too long (>= 20 minutes)."
 
     try:
         waveform, _ = librosa.load(input_audio_path, sr=config['audio_sample_rate'], mono=True)
     except:
-        return f"Unsupported or corrupt file format: {input_audio_path.name}", ""
+        return None, f"Error: unsupported or corrupt file format: {input_audio_path.name}"
 
     start_time = time.time()
     slicer = Slicer(sr=config['audio_sample_rate'], max_sil_kept=1000)
