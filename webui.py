@@ -92,7 +92,7 @@ def webui(port, work_dir):
                 label="Model Checkpoint", choices=choices, value=choices[0],
                 multiselect=False, allow_custom_value=False
             ),
-            gr.components.Audio(label="Input Audio File", type="filepath", max_file_size=1024),
+            gr.components.Audio(label="Input Audio File", type="filepath"),
         ],
         outputs=[
             gr.components.File(label="Output MIDI File", file_types=['.mid']),
