@@ -1,3 +1,7 @@
+from typing import List, Dict
+
+import mido
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -67,6 +71,30 @@ def decode_note_sequence(frame2item, values, masks, threshold=0.5):
     )[:, 1:] / (item_valid_dur + (item_valid_dur == 0))
 
     return item_values, item_dur, item_masks
+
+
+def build_midi_file(offsets: List[float], segments: List[Dict[str, np.ndarray]]) -> mido.MidiFile:
+    midi_file = mido.MidiFile(charset='utf8')
+    midi_track = mido.MidiTrack()
+    midi_track.append(mido.MetaMessage('set_tempo', tempo=mido.bpm2tempo(120), time=0))
+    last_time = 0
+    for offset, segment in zip(offsets, segments):
+        note_midi = np.round(segment['note_midi']).astype(np.int64).tolist()
+        # tempo = 120
+        offset_tick = round(offset * 960)
+        note_tick = np.diff(np.round(np.cumsum(segment['note_dur']) * 960).astype(np.int64), prepend=0).tolist()
+        note_rest = segment['note_rest'].tolist()
+        start = offset_tick
+        for i in range(len(note_midi)):
+            end = start + note_tick[i]
+            if not note_rest[i]:
+                # midi_track.append(mido.Message('note_on', note=note_midi[i], time=max(0, start - last_time)))
+                midi_track.append(mido.Message('note_on', note=note_midi[i], time=start - last_time))
+                midi_track.append(mido.Message('note_off', note=note_midi[i], time=note_tick[i]))
+                last_time = end
+            start = end
+    midi_file.tracks.append(midi_track)
+    return midi_file
 
 
 # if __name__ == '__main__':

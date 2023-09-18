@@ -3,12 +3,11 @@ import pathlib
 
 import click
 import librosa
-import mido
-import numpy as np
 import yaml
 
 import inference
 from utils import print_config
+from utils.infer_utils import build_midi_file
 from utils.slicer2 import Slicer
 
 task_inference_mapping = {
@@ -41,25 +40,9 @@ def infer(model, wav, midi):
     chunks = slicer.slice(waveform)
     midis = infer_ins.infer([c['waveform'] for c in chunks])
 
+    midi_file = build_midi_file([c['offset'] for c in chunks], midis)
+
     midi_path = pathlib.Path(midi) if midi is not None else wav_path.with_suffix('.mid')
-    midi_file = mido.MidiFile(charset='utf8')
-    midi_track = mido.MidiTrack()
-    last_time = 0
-    for offset, segment in zip([c['offset'] for c in chunks], midis):
-        note_midi = np.round(segment['note_midi']).astype(np.int64).tolist()
-        # tempo = 120
-        offset_tick = round(offset * 960)
-        note_tick = np.diff(np.round(np.cumsum(segment['note_dur']) * 960).astype(np.int64), prepend=0).tolist()
-        note_rest = segment['note_rest'].tolist()
-        start = offset_tick
-        for i in range(len(note_midi)):
-            end = start + note_tick[i]
-            if not note_rest[i]:
-                midi_track.append(mido.Message('note_on', note=note_midi[i], time=start - last_time))
-                midi_track.append(mido.Message('note_off', note=note_midi[i], time=note_tick[i]))
-                last_time = end
-            start = end
-    midi_file.tracks.append(midi_track)
     midi_file.save(midi_path)
 
 
