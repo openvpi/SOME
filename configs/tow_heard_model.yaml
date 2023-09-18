@@ -11,10 +11,12 @@ use_buond_loss: true
 use_midi_loss: true
 
 
-hop_size: 160  # 320
-win_size: 1024
-audio_sample_rate: 16000
-test_prefixes:
+hop_size: 512  # 320
+win_size: 2048
+fmin: 40
+fmax: 8000
+audio_sample_rate: 44100
+test_prefixes: []
 units_encoder: mel  # contentvec768l12
 units_encoder_ckpt: pretrained/contentvec/checkpoint_best_legacy_500.pt
 pe: rmvpe
@@ -22,16 +24,16 @@ pe_ckpt: pretrained/rmvpe/model.pt
 
 # global constants
 midi_min: 0
-midi_max: 128
-midi_prob_deviation: 0.5
+midi_max: 127
+midi_prob_deviation: 1.0
 midi_shift_proportion: 0.0
-midi_shift_range: [-6, 6]
+midi_shift_range: [-12, 12]
 rest_threshold: 0.1
 
 # neural networks
 sort_by_len: true
 units_dim: 80  # 768
-midi_num_bins: 256
+midi_num_bins: 128
 model_cls: modules.model.Gmidi_conform.midi_conforms
 midi_extractor_args:
   lay: 3
