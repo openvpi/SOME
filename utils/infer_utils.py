@@ -78,7 +78,7 @@ def build_midi_file(offsets: List[float], segments: List[Dict[str, np.ndarray]])
     midi_track = mido.MidiTrack()
     midi_track.append(mido.MetaMessage('set_tempo', tempo=mido.bpm2tempo(120), time=0))
     last_time = 0
-    offsets = [round(o) * 960 for o in offsets]
+    offsets = [round(o * 960) for o in offsets]
     for i, (offset, segment) in enumerate(zip(offsets, segments)):
         note_midi = np.round(segment['note_midi']).astype(np.int64).tolist()
         # tempo = 120
@@ -91,7 +91,7 @@ def build_midi_file(offsets: List[float], segments: List[Dict[str, np.ndarray]])
                 end = offsets[i + 1]
             if start < end and not note_rest[j]:
                 midi_track.append(mido.Message('note_on', note=note_midi[j], time=start - last_time))
-                midi_track.append(mido.Message('note_off', note=note_midi[j], time=note_tick[j]))
+                midi_track.append(mido.Message('note_off', note=note_midi[j], time=end - start))
                 last_time = end
             start = end
     midi_file.tracks.append(midi_track)
