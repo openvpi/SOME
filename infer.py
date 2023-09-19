@@ -6,7 +6,7 @@ import librosa
 import yaml
 
 import inference
-from utils import print_config
+from utils.config_utils import print_config
 from utils.infer_utils import build_midi_file
 from utils.slicer2 import Slicer
 

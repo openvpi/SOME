@@ -11,7 +11,7 @@ import yaml
 from lightning.pytorch.loggers import TensorBoardLogger
 
 import training.base_task
-from utils import print_config
+from utils.config_utils import read_full_config, print_config
 from utils.training_utils import (
     DsModelCheckpoint, DsTQDMProgressBar,
     get_latest_checkpoint_path, get_strategy
@@ -30,8 +30,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO,
 @click.option('--work_dir', required=False, metavar='DIR', help='Directory to save the experiment')
 def train(config, exp_name, work_dir):
     config = pathlib.Path(config)
-    with open(config, 'r', encoding='utf8') as f:
-        config = yaml.safe_load(f)
+    config = read_full_config(config)
     print_config(config)
     if work_dir is None:
         work_dir = pathlib.Path(__file__).parent / 'experiments'

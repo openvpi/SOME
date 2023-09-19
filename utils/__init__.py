@@ -5,22 +5,10 @@ import re
 import types
 from collections import OrderedDict
 
-import lightning.pytorch.utilities.rank_zero
 import numpy as np
 import torch
 
 from utils.training_utils import get_latest_checkpoint_path
-
-
-@lightning.pytorch.utilities.rank_zero.rank_zero_only
-def print_config(config: dict):
-    for i, (k, v) in enumerate(sorted(config.items())):
-        print(f"\033[0;33m{k}\033[0m: {v}", end='')
-        if i < len(config) - 1:
-            print(", ", end="")
-        if i % 5 == 4:
-            print()
-    print()
 
 
 def tensors_to_scalars(metrics):

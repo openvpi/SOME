@@ -5,15 +5,14 @@ import click
 import yaml
 
 import preprocessing
-from utils import print_config
+from utils.config_utils import read_full_config, print_config
 
 
 @click.command(help='Process the raw dataset into binary dataset')
 @click.option('--config', required=True, metavar='FILE', help='Path to the configuration file')
 def binarize(config):
     config = pathlib.Path(config)
-    with open(config, 'r', encoding='utf8') as f:
-        config = yaml.safe_load(f)
+    config = read_full_config(config)
     print_config(config)
     binarizer_cls = config['binarizer_cls']
     pkg = ".".join(binarizer_cls.split(".")[:-1])
