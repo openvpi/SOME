@@ -15,7 +15,7 @@ from utils.slicer2 import Slicer
 @click.option('--model', required=True, metavar='CKPT_PATH', help='Path to the model checkpoint (*.ckpt)')
 @click.option('--wav', required=True, metavar='WAV_PATH', help='Path to the input wav file (*.wav)')
 @click.option('--midi', required=False, metavar='MIDI_PATH', help='Path to the output MIDI file (*.mid)')
-@click.option('--tempo', required=False,default=120, metavar='TEMPO', help='Specify tempo in the output MIDI')
+@click.option('--tempo', required=False, type=float, default=120, metavar='TEMPO', help='Specify tempo in the output MIDI')
 def infer(model, wav, midi, tempo):
     model_path = pathlib.Path(model)
     with open(model_path.with_name('config.yaml'), 'r', encoding='utf8') as f:

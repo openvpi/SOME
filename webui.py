@@ -19,7 +19,7 @@ _infer_instances: Dict[str, Tuple[BaseInference, dict]] = {}  # dict mapping mod
 
 
 def infer(model_rel_path, input_audio_path, tempo_value):
-    if not model_rel_path or not input_audio_path:
+    if not model_rel_path or not input_audio_path or tempo_value is None:
         return None, "Error: required inputs not specified."
     if model_rel_path not in _infer_instances:
         model_path = _work_dir / model_rel_path
