@@ -30,32 +30,32 @@ class MIDIExtractionInference(BaseInference):
         wav_tensor = torch.from_numpy(waveform).unsqueeze(0).to(self.device)
         units = self.mel_spec(wav_tensor).transpose(1, 2)
         length = units.shape[1]
-        f0_algo = self.config['pe']
-        if f0_algo == 'parselmouth':
-            f0, _ = get_pitch_parselmouth(
-                waveform, sample_rate=self.config['audio_sample_rate'],
-                hop_size=self.config['hop_size'], length=length, interp_uv=True
-            )
-        elif f0_algo == 'rmvpe':
-            if self.rmvpe is None:
-                self.rmvpe = modules.rmvpe.RMVPE(self.config['pe_ckpt'], device=self.device)
-            f0, _ = self.rmvpe.get_pitch(
-                waveform, sample_rate=self.config['audio_sample_rate'],
-                hop_size=self.rmvpe.mel_extractor.hop_length,
-                length=(waveform.shape[0] + self.rmvpe.mel_extractor.hop_length - 1) // self.rmvpe.mel_extractor.hop_length,
-                interp_uv=True
-            )
-            f0 = resample_align_curve(
-                f0,
-                original_timestep=self.rmvpe.mel_extractor.hop_length / self.config['audio_sample_rate'],
-                target_timestep=self.config['hop_size'] / self.config['audio_sample_rate'],
-                align_length=length
-            )
-        else:
-            raise NotImplementedError(f'Invalid pitch extractor: {f0_algo}')
-        pitch = librosa.hz_to_midi(f0)
-        pitch = torch.from_numpy(pitch).unsqueeze(0).to(self.device)
-
+        # f0_algo = self.config['pe']
+        # if f0_algo == 'parselmouth':
+        #     f0, _ = get_pitch_parselmouth(
+        #         waveform, sample_rate=self.config['audio_sample_rate'],
+        #         hop_size=self.config['hop_size'], length=length, interp_uv=True
+        #     )
+        # elif f0_algo == 'rmvpe':
+        #     if self.rmvpe is None:
+        #         self.rmvpe = modules.rmvpe.RMVPE(self.config['pe_ckpt'], device=self.device)
+        #     f0, _ = self.rmvpe.get_pitch(
+        #         waveform, sample_rate=self.config['audio_sample_rate'],
+        #         hop_size=self.rmvpe.mel_extractor.hop_length,
+        #         length=(waveform.shape[0] + self.rmvpe.mel_extractor.hop_length - 1) // self.rmvpe.mel_extractor.hop_length,
+        #         interp_uv=True
+        #     )
+        #     f0 = resample_align_curve(
+        #         f0,
+        #         original_timestep=self.rmvpe.mel_extractor.hop_length / self.config['audio_sample_rate'],
+        #         target_timestep=self.config['hop_size'] / self.config['audio_sample_rate'],
+        #         align_length=length
+        #     )
+        # else:
+        #     raise NotImplementedError(f'Invalid pitch extractor: {f0_algo}')
+        # pitch = librosa.hz_to_midi(f0)
+        # pitch = torch.from_numpy(pitch).unsqueeze(0).to(self.device)
+        pitch = torch.zeros(units.shape[:2], dtype=torch.float32, device=self.device)
         return {
             'units': units,
             'pitch': pitch,
