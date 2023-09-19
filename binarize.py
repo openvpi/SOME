@@ -2,7 +2,6 @@ import importlib
 import pathlib
 
 import click
-import yaml
 
 import preprocessing
 from utils.config_utils import read_full_config, print_config
