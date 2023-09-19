@@ -28,7 +28,7 @@ def read_full_config(config_path: pathlib.Path) -> dict:
         loaded_config_files[config_path_str] = config
         return config
 
-    if not isinstance(config['base_config'], dict):
+    if not isinstance(config['base_config'], list):
         config['base_config'] = [config['base_config']]
     squashed_config = {}
     for base_config in config['base_config']:
