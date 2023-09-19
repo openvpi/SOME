@@ -73,16 +73,15 @@ def decode_note_sequence(frame2item, values, masks, threshold=0.5):
     return item_values, item_dur, item_masks
 
 
-def build_midi_file(offsets: List[float], segments: List[Dict[str, np.ndarray]]) -> mido.MidiFile:
+def build_midi_file(offsets: List[float], segments: List[Dict[str, np.ndarray]], tempo=120) -> mido.MidiFile:
     midi_file = mido.MidiFile(charset='utf8')
     midi_track = mido.MidiTrack()
-    midi_track.append(mido.MetaMessage('set_tempo', tempo=mido.bpm2tempo(120), time=0))
+    midi_track.append(mido.MetaMessage('set_tempo', tempo=mido.bpm2tempo(tempo), time=0))
     last_time = 0
-    offsets = [round(o * 960) for o in offsets]
+    offsets = [round(o * tempo * 8) for o in offsets]
     for i, (offset, segment) in enumerate(zip(offsets, segments)):
         note_midi = np.round(segment['note_midi']).astype(np.int64).tolist()
-        # tempo = 120
-        note_tick = np.diff(np.round(np.cumsum(segment['note_dur']) * 960).astype(np.int64), prepend=0).tolist()
+        note_tick = np.diff(np.round(np.cumsum(segment['note_dur']) * tempo * 8).astype(np.int64), prepend=0).tolist()
         note_rest = segment['note_rest'].tolist()
         start = offset
         for j in range(len(note_midi)):

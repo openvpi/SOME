@@ -18,7 +18,7 @@ _work_dir: pathlib.Path = None
 _infer_instances: Dict[str, Tuple[BaseInference, dict]] = {}  # dict mapping model_rel_path to (infer_ins, config)
 
 
-def infer(model_rel_path, input_audio_path):
+def infer(model_rel_path, input_audio_path, tempo_value):
     if not model_rel_path or not input_audio_path:
         return None, "Error: required inputs not specified."
     if model_rel_path not in _infer_instances:
@@ -56,7 +56,7 @@ def infer(model_rel_path, input_audio_path):
     rtf = infer_time / total_duration
     print(f'RTF: {rtf}')
 
-    midi_file = build_midi_file([c['offset'] for c in chunks], midis)
+    midi_file = build_midi_file([c['offset'] for c in chunks], midis, tempo=tempo_value)
 
     output_midi_path = input_audio_path.with_suffix('.mid')
     midi_file.save(output_midi_path)
@@ -93,6 +93,7 @@ def webui(port, work_dir):
                 multiselect=False, allow_custom_value=False
             ),
             gr.components.Audio(label="Input Audio File", type="filepath"),
+            gr.components.Number(label='Tempo Value', minimum=20, maximum=200, value=120),
         ],
         outputs=[
             gr.components.File(label="Output MIDI File", file_types=['.mid']),
