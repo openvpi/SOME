@@ -7,12 +7,9 @@ raw_data_dir: []
 binary_data_dir: data/some_dataset_mel/binary
 binarization_args:
   num_workers: 0
-  shuffle: true
-valid_set_name: valid
-train_set_name: train
-use_buond_loss: false
-use_midi_loss: true
-#use_buond_loss: true
+  merge_rest: true  # merge continuous rest notes
+  merge_slur: true  # merge slurs with the same pitch
+  round_midi: true  # round midi value
 
 key_shift_factor: 8
 key_shift_range: [-12, 12]

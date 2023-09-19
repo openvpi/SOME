@@ -1,8 +1,44 @@
+from typing import Tuple
+
 import numpy as np
 import parselmouth
 import torch
 
 from utils.pitch_utils import interp_f0
+
+
+def merge_slurs(note_seq: list, note_dur: list, note_slur: list) -> Tuple[list, list]:
+    # merge slurs with the same pitch
+    note_seq_merge_slur = [note_seq[0]]
+    note_dur_merge_slur = [note_dur[0]]
+    for i in range(1, len(note_seq)):
+        if note_slur[i] and note_seq[i] == note_seq[i - 1]:
+            note_dur_merge_slur[-1] += note_dur[i]
+        else:
+            note_seq_merge_slur.append(note_seq[i])
+            note_dur_merge_slur.append(note_dur[i])
+    return note_seq_merge_slur, note_dur_merge_slur
+
+
+def merge_rests(note_seq: list, note_dur: list) -> Tuple[list, list]:
+    i = 0
+    note_seq_merge_rest = []
+    note_dur_merge_rest = []
+    while i < len(note_seq):
+        if note_seq[i] != 'rest':
+            note_seq_merge_rest.append(note_seq[i])
+            note_dur_merge_rest.append(note_dur[i])
+            i += 1
+        else:
+            j = i
+            rest_dur = 0
+            while j < len(note_seq) and note_seq[j] == 'rest':
+                rest_dur += note_dur[j]
+                j += 1
+            note_seq_merge_rest.append('rest')
+            note_dur_merge_rest.append(rest_dur)
+            i = j
+    return note_seq_merge_rest, note_dur_merge_rest
 
 
 @torch.no_grad()

@@ -1,5 +1,6 @@
 import copy
 import csv
+import json
 import os
 import pathlib
 import random
@@ -12,7 +13,7 @@ from scipy import interpolate
 import modules.contentvec
 import modules.rmvpe
 from modules.commons import LengthRegulator
-from utils.binarizer_utils import get_mel2ph_torch, get_pitch_parselmouth
+from utils.binarizer_utils import merge_slurs, merge_rests, get_mel2ph_torch, get_pitch_parselmouth
 from utils.pitch_utils import resample_align_curve
 from utils.plot import distribution_to_figure
 from .base_binarizer import BaseBinarizer
@@ -38,6 +39,9 @@ class MIDIExtractionBinarizer(BaseBinarizer):
     def __init__(self, config: dict):
         super().__init__(config, data_attrs=MIDI_EXTRACTION_ITEM_ATTRIBUTES)
         self.lr = LengthRegulator().to(self.device)
+        self.merge_rest = self.binarization_args['merge_rest']
+        self.merge_slur = self.binarization_args['merge_slur']
+        self.round_midi = self.binarization_args['round_midi']
         self.key_shift_min, self.key_shift_max = self.config['key_shift_range']
 
     def load_meta_data(self, raw_data_dir: pathlib.Path, ds_id):
@@ -50,33 +54,42 @@ class MIDIExtractionBinarizer(BaseBinarizer):
                 temp_dict = {
                     'wav_fn': str(raw_data_dir / 'wavs' / f'{item_name}.wav')
                 }
-                note_seq = utterance_label['note_seq'].split()
-                note_dur = [float(x) for x in utterance_label['note_dur'].split()]
-                assert len(note_seq) == len(note_dur), \
-                    f'Lengths of note_seq and note_dur mismatch in \'{item_name}\'.'
+                ds_path = raw_data_dir / 'wavs' / f'{item_name}.ds'
+                with open(ds_path, 'r', encoding='utf8') as f:
+                    ds = json.load(f)
+                    if isinstance(ds, list):
+                        ds = ds[0]
+                # normalize
+                note_seq = [
+                    librosa.midi_to_note(
+                        np.clip(
+                            librosa.note_to_midi(n, round_midi=self.round_midi),
+                            a_min=0, a_max=127
+                        ),
+                        cents=not self.round_midi, unicode=False
+                    ) if n != 'rest' else 'rest'
+                    for n in ds['note_seq'].split()
+                ]
+                note_slur = [bool(int(s)) for s in ds['note_slur'].split()]
+                note_dur = [float(x) for x in ds['note_dur'].split()]
+
+                # if not len(note_seq) == len(note_slur) == len(note_dur):
+                #     continue
+                assert len(note_seq) == len(note_slur) == len(note_dur), \
+                    f'Lengths of note_seq, note_slur and note_dur mismatch in \'{item_name}\'.'
                 assert any([note != 'rest' for note in note_seq]), \
                     f'All notes are rest in \'{item_name}\'.'
 
-                # merge continuous rest notes
-                i = 0
-                note_seq_new = []
-                note_dur_new = []
-                while i < len(note_seq):
-                    if note_seq[i] != 'rest':
-                        note_seq_new.append(note_seq[i])
-                        note_dur_new.append(note_dur[i])
-                        i += 1
-                    else:
-                        j = i
-                        rest_dur = 0
-                        while j < len(note_seq) and note_seq[j] == 'rest':
-                            rest_dur += note_dur[j]
-                            j += 1
-                        note_seq_new.append('rest')
-                        note_dur_new.append(rest_dur)
-                        i = j
-                temp_dict['note_seq'] = note_seq_new
-                temp_dict['note_dur'] = note_dur_new
+                if self.merge_slur:
+                    # merge slurs with the same pitch
+                    note_seq, note_dur = merge_slurs(note_seq, note_dur, note_slur)
+
+                if self.merge_rest:
+                    # merge continuous rest notes
+                    note_seq, note_dur = merge_rests(note_seq, note_dur)
+
+                temp_dict['note_seq'] = note_seq
+                temp_dict['note_dur'] = note_dur
 
                 meta_data_dict[f'{ds_id}:{item_name}'] = temp_dict
         else:
@@ -123,7 +136,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
                     pad_inches=0.25)
         print(f'| save summary to \'{filename}\'')
 
-    def _process_item(self, waveform, meta_data, round_midi=False):
+    def _process_item(self, waveform, meta_data, int_midi=False):
         wav_tensor = torch.from_numpy(waveform).to(self.device)
         units_encoder = self.config['units_encoder']
         if units_encoder == 'contentvec768l12':
@@ -180,8 +193,8 @@ class MIDIExtractionBinarizer(BaseBinarizer):
         processed_input['pitch'] = pitch
 
         note_midi = np.array(
-            [(librosa.note_to_midi(n, round_midi=round_midi) if n != 'rest' else -1) for n in meta_data['note_seq']],
-            dtype=np.int64 if round_midi else np.float32
+            [(librosa.note_to_midi(n, round_midi=int_midi) if n != 'rest' else -1) for n in meta_data['note_seq']],
+            dtype=np.int64 if int_midi else np.float32
         )
         note_rest = note_midi < 0
         interp_func = interpolate.interp1d(
@@ -206,7 +219,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
     def process_item(self, item_name, meta_data, allow_aug=False):
         waveform, _ = librosa.load(meta_data['wav_fn'], sr=self.config['audio_sample_rate'], mono=True)
 
-        processed_input = self._process_item(waveform, meta_data)
+        processed_input = self._process_item(waveform, meta_data, int_midi=False)
         items = [processed_input]
         if not allow_aug:
             return items
@@ -215,6 +228,8 @@ class MIDIExtractionBinarizer(BaseBinarizer):
         for _ in range(self.config['key_shift_factor']):
             assert mel_spec is not None, 'Units encoder must be mel if augmentation is applied!'
             key_shift = random.random() * (self.key_shift_max - self.key_shift_min) + self.key_shift_min
+            if self.round_midi:
+                key_shift = round(key_shift)
             processed_input_aug = copy.deepcopy(processed_input)
             assert isinstance(mel_spec, modules.rmvpe.MelSpectrogram)
             processed_input_aug['units'] = mel_spec(
