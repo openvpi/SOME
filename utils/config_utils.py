@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pathlib
 
-import lightning.pytorch
+import lightning.pytorch.utilities
 import yaml
 
 loaded_config_files = {}
