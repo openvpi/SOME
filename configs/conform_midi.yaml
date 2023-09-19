@@ -1,6 +1,5 @@
-
-
-
+base_config:
+  configs/base.yaml
 
 # preprocessing
 binarizer_cls: null
@@ -10,6 +9,20 @@ pe: rmvpe
 pe_ckpt: pretrained/rmvpe/model.pt
 
 # neural networks
+model_cls: modules.model.midi_conform.midi_conform
+midi_extractor_args:
+  lay: 6
+  dim: 512
+  indim: 768
+  outtype: 128
+  use_lay_skip: false
+  kernel_size: 31
+  conv_drop: 0.1
+  ffn_latent_drop: 0.1
+  ffn_out_drop: 0.1
+  attention_drop: 0.1
+  attention_heads: 8
+  attention_heads_dim: 64
 
 # training
 task_cls: training.MIDIExtractionTask
@@ -24,53 +37,12 @@ lr_scheduler_args:
   step_size: 50000
   gamma: 0.5
 
-clip_grad_norm: 1
-accumulate_grad_batches: 1
-sampler_frame_count_grid: 6
-ds_workers: 4
-dataloader_prefetch_factor: 2
-
 max_batch_size: 48
 max_batch_frames: 80000
-max_val_batch_size: 1
-max_val_batch_frames: 10000
 num_valid_plots: 10
-log_interval: 100
-num_sanity_val_steps: 1  # steps of validation at the beginning
 val_check_interval: 2000
 num_ckpt_keep: 5
 max_updates: 320000
 permanent_ckpt_start: 200000
 permanent_ckpt_interval: 40000
 
-###########
-# pytorch lightning
-# Read https://lightning.ai/docs/pytorch/stable/common/trainer.html#trainer-class-api for possible values
-###########
-pl_trainer_accelerator: 'auto'
-pl_trainer_devices: 'auto'
-pl_trainer_precision: '32-true'
-pl_trainer_num_nodes: 1
-pl_trainer_strategy: 'auto'
-ddp_backend: 'nccl' # choose from 'gloo', 'nccl', 'nccl_no_p2p'
-seed: 114514
-
-
-
-
-
-midi_extractor_args:
-  lay: 6
-  dim: 512
-  indim: 768
-  outtype: 128
-  use_lay_skip: false
-  kernel_size: 31
-  conv_drop: 0.1
-  ffn_latent_drop: 0.1
-  ffn_out_drop: 0.1
-  attention_drop: 0.1
-  attention_heads: 8
-  attention_heads_dim: 64
-model_cls: modules.model.midi_conform.midi_conform
-#task_cls:

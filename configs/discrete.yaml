@@ -1,7 +1,21 @@
 base_config:
-  - configs/discrete.yaml
+  - configs/base.yaml
 
+# preprocessing
+binarizer_cls: preprocessing.QuantizedMIDIExtractionBinarizer
+raw_data_dir: []
 binary_data_dir: data/some_ds_quant_spk4_aug8/binary
+binarization_args:
+  num_workers: 0
+  shuffle: true
+use_bound_loss: true
+use_midi_loss: true
+
+test_prefixes: []
+units_encoder: mel  # contentvec768l12
+units_encoder_ckpt: pretrained/contentvec/checkpoint_best_legacy_500.pt
+pe: rmvpe
+pe_ckpt: pretrained/rmvpe/model.pt
 
 # global constants
 midi_shift_range: [-6, 6]

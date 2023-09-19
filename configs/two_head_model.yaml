@@ -1,3 +1,6 @@
+base_config:
+  configs/continuous.yaml
+
 # preprocessing
 binarizer_cls: preprocessing.MIDIExtractionBinarizer
 raw_data_dir: []
@@ -5,17 +8,7 @@ binary_data_dir: data/some_dataset_mel/binary
 binarization_args:
   num_workers: 0
   shuffle: true
-valid_set_name: valid
-train_set_name: train
-use_bound_loss: true
-use_midi_loss: true
 
-
-hop_size: 512  # 320
-win_size: 2048
-fmin: 40
-fmax: 8000
-audio_sample_rate: 44100
 test_prefixes: []
 units_encoder: mel  # contentvec768l12
 units_encoder_ckpt: pretrained/contentvec/checkpoint_best_legacy_500.pt
@@ -23,21 +16,16 @@ pe: rmvpe
 pe_ckpt: pretrained/rmvpe/model.pt
 
 # global constants
-midi_min: 0
-midi_max: 127
 midi_prob_deviation: 1.0
-midi_shift_range: [-12, 12]
 rest_threshold: 0.1
 
 # neural networks
-sort_by_len: true
 units_dim: 80  # 768
 midi_num_bins: 128
 model_cls: modules.model.Gmidi_conform.midi_conforms
 midi_extractor_args:
   lay: 3
   dim: 512
-
   use_lay_skip: true
   kernel_size: 31
   conv_drop: 0.1
@@ -49,62 +37,25 @@ midi_extractor_args:
 
 # training
 task_cls: training.MIDIExtractionTask
+use_bound_loss: true
+use_midi_loss: true
 optimizer_args:
   optimizer_cls: torch.optim.AdamW
   lr: 0.0001
   beta1: 0.9
   beta2: 0.98
   weight_decay: 0
-#lr_scheduler_args:
-#  scheduler_cls: torch.optim.lr_scheduler.StepLR
-#  step_size: 50000
-#  gamma: 0.5
 
 lr_scheduler_args:
   scheduler_cls: lr_scheduler.scheduler.WarmupLR
   warmup_steps: 5000
   min_lr: 0.00001
 
-clip_grad_norm: 1
-accumulate_grad_batches: 1
-sampler_frame_count_grid: 6
-ds_workers: 4
-dataloader_prefetch_factor: 2
-
 max_batch_size: 8
 max_batch_frames: 80000
-max_val_batch_size: 1
-max_val_batch_frames: 10000
 num_valid_plots: 10
-log_interval: 100
-num_sanity_val_steps: 1  # steps of validation at the beginning
 val_check_interval: 1000
 num_ckpt_keep: 5
 max_updates: 100000
 permanent_ckpt_start: 200000
 permanent_ckpt_interval: 40000
-
-###########
-# pytorch lightning
-# Read https://lightning.ai/docs/pytorch/stable/common/trainer.html#trainer-class-api for possible values
-###########
-#pl_trainer_accelerator: 'cpu'
-pl_trainer_accelerator: 'auto'
-pl_trainer_devices: 'auto'
-pl_trainer_precision: '32-true'
-pl_trainer_num_nodes: 1
-pl_trainer_strategy: 'auto'
-ddp_backend: 'nccl' # choose from 'gloo', 'nccl', 'nccl_no_p2p'
-seed: 114514
-
-###########
-# finetune
-###########
-
-finetune_enabled: false
-finetune_ckpt_path: null
-finetune_ignored_params: []
-finetune_strict_shapes: true
-
-freezing_enabled: false
-frozen_params: []
