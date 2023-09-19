@@ -64,7 +64,7 @@ class QuantizedMIDIExtractionTask(MIDIExtractionTask):
         else:
             losses = {}
 
-            if  self.cfg['use_buond_loss']:
+            if  self.cfg['use_bound_loss']:
                 bound_loss = self.bound_loss(bounds, sample['bounds'])
 
                 losses['bound_loss'] = bound_loss

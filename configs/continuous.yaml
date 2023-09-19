@@ -4,7 +4,7 @@ base_config:
 # preprocessing
 binarizer_cls: preprocessing.MIDIExtractionBinarizer
 raw_data_dir: []
-binary_data_dir: data/some_dataset_mel/binary
+binary_data_dir: null
 binarization_args:
   num_workers: 0
   merge_rest: true  # merge continuous rest notes
@@ -13,8 +13,7 @@ binarization_args:
 
 key_shift_factor: 8
 key_shift_range: [-12, 12]
-midi_shift_proportion: 0.0
-test_prefixes:
+test_prefixes: []
 units_encoder: mel  # contentvec768l12
 units_encoder_ckpt: pretrained/contentvec/checkpoint_best_legacy_500.pt
 pe: rmvpe
@@ -25,14 +24,12 @@ midi_prob_deviation: 1.0
 rest_threshold: 0.1
 
 # neural networks
-sort_by_len: true
 units_dim: 80  # 768
 midi_num_bins: 128  # 256
-model_cls: modules.model.midi_conform.midi_conforms
+model_cls: modules.model.Gmidi_conform.midi_conforms
 midi_extractor_args:
-  lay: 3
+  lay: 8
   dim: 512
-
   use_lay_skip: true
   kernel_size: 31
   conv_drop: 0.1
@@ -44,8 +41,6 @@ midi_extractor_args:
 
 # training
 task_cls: training.MIDIExtractionTask
-use_buond_loss: false
-use_midi_loss: true
 optimizer_args:
   optimizer_cls: torch.optim.AdamW
   lr: 0.0001
@@ -58,12 +53,11 @@ lr_scheduler_args:
   warmup_steps: 5000
   min_lr: 0.00001
 
-
 max_batch_size: 8
 max_batch_frames: 80000
 num_valid_plots: 10
 val_check_interval: 1000
 num_ckpt_keep: 5
 max_updates: 100000
-permanent_ckpt_start: 200000
-permanent_ckpt_interval: 40000
+permanent_ckpt_start: 60000
+permanent_ckpt_interval: 8000

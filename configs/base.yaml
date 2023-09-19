@@ -30,6 +30,8 @@ model_cls: null
 midi_extractor_args: {}
 
 # training
+use_midi_loss: true
+use_bound_loss: true
 task_cls: training.BaseTask
 sort_by_len: true
 optimizer_args:

@@ -7,7 +7,7 @@ binarization_args:
   shuffle: true
 valid_set_name: valid
 train_set_name: train
-use_buond_loss: true
+use_bound_loss: true
 use_midi_loss: true
 
 
@@ -26,7 +26,6 @@ pe_ckpt: pretrained/rmvpe/model.pt
 midi_min: 0
 midi_max: 127
 midi_prob_deviation: 1.0
-midi_shift_proportion: 0.0
 midi_shift_range: [-12, 12]
 rest_threshold: 0.1
 

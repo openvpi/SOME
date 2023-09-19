@@ -20,7 +20,6 @@ pe_ckpt: pretrained/rmvpe/model.pt
 midi_min: 0
 midi_max: 128
 midi_prob_deviation: 0.5
-midi_shift_proportion: 0.0
 midi_shift_range: [-6, 6]
 rest_threshold: 0.1
 
