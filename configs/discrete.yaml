@@ -9,7 +9,7 @@ binarization_args:
   num_workers: 0
   shuffle: true
   merge_rest: true  # merge continuous rest notes
-  merge_slur: true  # merge slurs with the same pitch
+  merge_slur: true  # merge slurs with the similar pitch
 use_bound_loss: true
 use_midi_loss: true
 

@@ -10,7 +10,7 @@ from utils.pitch_utils import interp_f0
 
 def merge_slurs(note_seq: list, note_dur: list, note_slur: list, tolerance=None) -> Tuple[list, list]:
     """
-    merge slurs with the same pitch
+    merge slurs with the similar pitch
     """
     note_midi = [librosa.note_to_midi(n, round_midi=False) if n != 'rest' else 'rest' for n in note_seq]
     prev_min = prev_max = None
