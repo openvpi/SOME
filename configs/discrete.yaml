@@ -38,7 +38,6 @@ midi_extractor_args:
   attention_drop: 0.1
   attention_heads: 8
   attention_heads_dim: 64
-  sig: false
 
 # training
 task_cls: training.QuantizedMIDIExtractionTask

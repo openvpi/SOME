@@ -575,9 +575,8 @@ class unet_base_cf(nn.Module):
                  conv_drop: float = 0.1,
                  ffn_latent_drop: float = 0.1,
                  ffn_out_drop: float = 0.1, attention_drop: float = 0.1, attention_heads: int = 4,
-                 attention_heads_dim: int = 64,sig:bool=True,unet_type='cf_unet_full',unet_down=[2, 2, 2], unet_dim=[512, 768, 1024], unet_latentdim=1024,):
+                 attention_heads_dim: int = 64, unet_type='cf_unet_full',unet_down=[2, 2, 2], unet_dim=[512, 768, 1024], unet_latentdim=1024,):
         super().__init__()
-        self.sig=sig
 
         self.unet=unet_adp(unet_type=unet_type, unet_down=unet_down, unet_dim=unet_dim, unet_latentdim=unet_latentdim,
                  unet_indim=indim, unet_outdim=dim,
@@ -620,10 +619,7 @@ class unet_base_cf(nn.Module):
         midiout = self.outln(xo)
         cutprp = torch.sigmoid(cutprp)
         cutprp = torch.squeeze(cutprp, -1)
-        # if  self.sig:
-        #     midiout = torch.sigmoid(midiout)
         return midiout, cutprp
-
 
 
 if __name__ == '__main__':

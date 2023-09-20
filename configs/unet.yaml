@@ -19,7 +19,6 @@ midi_shift_proportion: 0.0
 midi_shift_range: [-12, 12]
 rest_threshold: 0.1
 
-use_BCEWithLogitsLoss: true
 midi_extractor_args:
   output_lay: 3
   dim: 512
@@ -34,6 +33,5 @@ midi_extractor_args:
   unet_down: [2, 2, 2,2,2]
   unet_dim: [512, 512, 768,768,1024]
   unet_latentdim: 1024
-  sig: false
 
 pl_trainer_precision: 'bf16'
