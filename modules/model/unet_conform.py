@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from modules.conform.Gconform import Gmidi_conform
 
+from modules.conform.unet_with_conform import unet_base_cf
 
 
 class midi_loss(nn.Module):
@@ -19,13 +19,13 @@ class midi_loss(nn.Module):
         return midiloss, cutploss
 
 
-class midi_conforms(nn.Module):
+class midi_unet_conforms(nn.Module):
     def __init__(self, config):
         super().__init__()
 
         cfg = config['midi_extractor_args']
         cfg.update({'indim': config['units_dim'], 'outdim': config['midi_num_bins']})
-        self.model = Gmidi_conform(**cfg)
+        self.model = unet_base_cf(**cfg)
 
     def forward(self, x, f0, mask=None,softmax=False,sig=False):
 

@@ -28,6 +28,7 @@ units_dim: 80  # 768
 midi_num_bins: 128
 model_cls: null
 midi_extractor_args: {}
+use_BCEWithLogitsLoss: false
 
 # training
 use_midi_loss: true
