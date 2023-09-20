@@ -57,7 +57,7 @@ max_batch_size: 8
 max_batch_frames: 80000
 max_val_batch_size: 1
 max_val_batch_frames: 10000
-num_valid_plots: 10
+num_valid_plots: 100
 log_interval: 100
 num_sanity_val_steps: 1  # steps of validation at the beginning
 val_check_interval: 1000

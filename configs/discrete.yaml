@@ -8,6 +8,8 @@ binary_data_dir: data/some_ds_quant_spk4_aug8/binary
 binarization_args:
   num_workers: 0
   shuffle: true
+  merge_rest: true  # merge continuous rest notes
+  merge_slur: true  # merge slurs with the same pitch
 use_bound_loss: true
 use_midi_loss: true
 
@@ -18,7 +20,8 @@ pe: rmvpe
 pe_ckpt: pretrained/rmvpe/model.pt
 
 # global constants
-midi_shift_range: [-6, 6]
+key_shift_range: [-12, 12]
+key_shift_factor: 8
 
 # neural networks
 units_dim: 80  # 768
