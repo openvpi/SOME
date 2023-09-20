@@ -1,0 +1,37 @@
+base_config:
+  - configs/base.yaml
+
+
+model_cls: modules.model.Gmidi_conform.midi_conforms
+task_cls: training.MIDIExtractionTask
+binary_data_dir: data/some_ds_roundmidi_spk3_aug8/binary
+
+num_valid_plots: 100
+log_interval: 100
+num_sanity_val_steps: 1  # steps of validation at the beginning
+val_check_interval: 5000
+num_ckpt_keep: 6
+max_updates: 300000
+
+midi_prob_deviation: 1.0
+midi_shift_proportion: 0.0
+midi_shift_range: [-12, 12]
+rest_threshold: 0.1
+
+
+use_BCEWithLogitsLoss: true
+midi_extractor_args:
+  lay: 8
+  dim: 512
+
+  use_lay_skip: true
+  kernel_size: 31
+  conv_drop: 0.1
+  ffn_latent_drop: 0.1
+  ffn_out_drop: 0.1
+  attention_drop: 0.1
+  attention_heads: 8
+  attention_heads_dim: 64
+  sig: false
+
+pl_trainer_precision: 'bf16'
