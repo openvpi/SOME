@@ -620,8 +620,8 @@ class unet_base_cf(nn.Module):
         midiout = self.outln(xo)
         cutprp = torch.sigmoid(cutprp)
         cutprp = torch.squeeze(cutprp, -1)
-        if  self.sig:
-            midiout = torch.sigmoid(midiout)
+        # if  self.sig:
+        #     midiout = torch.sigmoid(midiout)
         return midiout, cutprp
 
 
