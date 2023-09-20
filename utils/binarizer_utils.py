@@ -1,5 +1,6 @@
 from typing import Tuple
 
+import librosa
 import numpy as np
 import parselmouth
 import torch
@@ -7,16 +8,45 @@ import torch
 from utils.pitch_utils import interp_f0
 
 
-def merge_slurs(note_seq: list, note_dur: list, note_slur: list) -> Tuple[list, list]:
-    # merge slurs with the same pitch
-    note_seq_merge_slur = [note_seq[0]]
+def merge_slurs(note_seq: list, note_dur: list, note_slur: list, tolerance=None) -> Tuple[list, list]:
+    """
+    merge slurs with the same pitch
+    """
+    note_midi = [librosa.note_to_midi(n, round_midi=False) if n != 'rest' else 'rest' for n in note_seq]
+    prev_min = prev_max = None
+    note_midi_merge_slur = [note_midi[0]]
     note_dur_merge_slur = [note_dur[0]]
+
+    def can_be_merged(midi):
+        if tolerance is None or midi == 'rest' or note_midi_merge_slur[-1] == 'rest':
+            return note_midi_merge_slur[-1] == midi
+        return (
+            abs(midi - note_midi_merge_slur[-1]) <= tolerance
+            and (prev_min is None or abs(midi - prev_min) <= tolerance)
+            and (prev_max is None or abs(midi - prev_max) <= tolerance)
+        )
+
+    def get_merged_midi(midi1, dur1, midi2, dur2):
+        if midi1 == midi2:
+            return midi1
+        return (midi1 * dur1 + midi2 * dur2) / (dur1 + dur2)
+
     for i in range(1, len(note_seq)):
-        if note_slur[i] and note_seq[i] == note_seq[i - 1]:
+        if note_slur[i] and can_be_merged(note_midi[i]):
+            # update min and max
+            prev_min = min(note_midi[i], note_midi_merge_slur[-1]) if prev_min is None else min(prev_min, note_midi[i])
+            prev_max = max(note_midi[i], note_midi_merge_slur[-1]) if prev_max is None else max(prev_max, note_midi[i])
+            note_midi_merge_slur[-1] = get_merged_midi(
+                note_midi_merge_slur[-1], note_dur_merge_slur[-1], note_midi[i], note_dur[i]
+            )
             note_dur_merge_slur[-1] += note_dur[i]
         else:
-            note_seq_merge_slur.append(note_seq[i])
+            note_midi_merge_slur.append(note_midi[i])
             note_dur_merge_slur.append(note_dur[i])
+            prev_min = prev_max = None
+    note_seq_merge_slur = [
+        librosa.midi_to_note(n, cents=True, unicode=False) if n != 'rest' else 'rest' for n in note_midi_merge_slur
+    ]
     return note_seq_merge_slur, note_dur_merge_slur
 
 

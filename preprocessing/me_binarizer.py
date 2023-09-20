@@ -41,6 +41,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
         self.lr = LengthRegulator().to(self.device)
         self.merge_rest = self.binarization_args['merge_rest']
         self.merge_slur = self.binarization_args['merge_slur']
+        self.slur_tolerance = self.binarization_args['slur_tolerance']
         self.round_midi = self.binarization_args['round_midi']
         self.key_shift_min, self.key_shift_max = self.config['key_shift_range']
 
@@ -82,7 +83,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
 
                 if self.merge_slur:
                     # merge slurs with the same pitch
-                    note_seq, note_dur = merge_slurs(note_seq, note_dur, note_slur)
+                    note_seq, note_dur = merge_slurs(note_seq, note_dur, note_slur, tolerance=self.slur_tolerance)
 
                 if self.merge_rest:
                     # merge continuous rest notes
