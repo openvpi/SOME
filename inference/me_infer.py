@@ -64,7 +64,11 @@ class MIDIExtractionInference(BaseInference):
 
     @torch.no_grad()
     def forward_model(self, sample: Dict[str, torch.Tensor]):
-        probs, bounds = self.model(x=sample['units'], f0=sample['pitch'], mask=sample['masks'])
+        sig=False
+        if self.config['use_BCEWithLogitsLoss']:
+            sig=True
+
+        probs, bounds = self.model(x=sample['units'], f0=sample['pitch'], mask=sample['masks'],sig=sig)
 
         return {
             'probs': probs,
