@@ -16,7 +16,6 @@ pe_ckpt: pretrained/rmvpe/model.pt
 
 # global constants
 midi_prob_deviation: 0.5
-midi_shift_range: [-6, 6]
 rest_threshold: 0.1
 
 # neural networks

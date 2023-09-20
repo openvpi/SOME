@@ -3,9 +3,6 @@ base_config:
 
 binary_data_dir: data/some_ds_quant_spk4_aug8/binary
 
-# global constants
-midi_shift_range: [-6, 6]
-
 # neural networks
 units_dim: 80  # 768
 midi_num_bins: 129  # rest = 128
