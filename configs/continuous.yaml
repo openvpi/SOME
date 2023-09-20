@@ -8,7 +8,7 @@ binary_data_dir: null
 binarization_args:
   num_workers: 0
   merge_rest: true  # merge continuous rest notes
-  merge_slur: true  # merge slurs with the same pitch
+  merge_slur: true  # merge slurs with the similar pitch
   round_midi: false  # round midi value
   slur_tolerance: 0.5  # maximum allowed value of pitch change of a slur to be merged
 
