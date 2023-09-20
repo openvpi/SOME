@@ -70,10 +70,8 @@ class MIDIExtractionTask(BaseTask):
         return model
 
     def build_losses_and_metrics(self):
-        if not self.config['use_BCEWithLogitsLoss']:
-            self.midi_loss = nn.BCELoss()
-        else:
-            self.midi_loss = nn.BCEWithLogitsLoss()
+
+        self.midi_loss = nn.BCEWithLogitsLoss()
         self.bound_loss = modules.losses.BinaryEMDLoss()
         # self.bound_loss = modules.losses.BinaryEMDLoss(bidirectional=True)
         self.register_metric('midi_acc', modules.metrics.MIDIAccuracy(tolerance=0.5))
@@ -90,16 +88,16 @@ class MIDIExtractionTask(BaseTask):
         # mask=None
 
         f0 = sample['pitch']
-        sig=False
-        if self.config['use_BCEWithLogitsLoss'] and infer:
-            sig=True
 
-        probs, bounds = self.model(x=spec, f0=f0, mask=mask,sig=sig)
+
+
 
         if infer:
+            probs, bounds = self.model(x=spec, f0=f0, mask=mask, sig=True)
             return probs, bounds
         else:
             losses = {}
+            probs, bounds = self.model(x=spec, f0=f0, mask=mask, sig=False)
 
             if  self.cfg['use_bound_loss']:
                 bound_loss = self.bound_loss(bounds, sample['bounds'])

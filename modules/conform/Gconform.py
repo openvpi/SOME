@@ -137,6 +137,6 @@ class Gmidi_conform(nn.Module):
         midiout = self.outln(x)
         cutprp = torch.sigmoid(cutprp)
         cutprp = torch.squeeze(cutprp, -1)
-        if  self.sig:
-            midiout = torch.sigmoid(midiout)
+        # if  self.sig:
+        #     midiout = torch.sigmoid(midiout)
         return midiout, cutprp
