@@ -41,8 +41,8 @@ class MIDIExtractionBinarizer(BaseBinarizer):
         self.lr = LengthRegulator().to(self.device)
         self.merge_rest = self.binarization_args['merge_rest']
         self.merge_slur = self.binarization_args['merge_slur']
-        self.slur_tolerance = self.binarization_args['slur_tolerance']
-        self.round_midi = self.binarization_args['round_midi']
+        self.slur_tolerance = self.binarization_args.get('slur_tolerance')
+        self.round_midi = self.binarization_args.get('round_midi', False)
         self.key_shift_min, self.key_shift_max = self.config['key_shift_range']
 
     def load_meta_data(self, raw_data_dir: pathlib.Path, ds_id):
