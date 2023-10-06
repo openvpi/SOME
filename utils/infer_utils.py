@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 
 def decode_gaussian_blurred_probs(probs, vmin, vmax, deviation, threshold):
-    num_bins = probs.shape[-1]
+    num_bins = int(probs.shape[-1])
     interval = (vmax - vmin) / (num_bins - 1)
     width = int(3 * deviation / interval)  # 3 * sigma
     idx = torch.arange(num_bins, device=probs.device)[None, None, :]  # [1, 1, N]
@@ -24,14 +24,17 @@ def decode_gaussian_blurred_probs(probs, vmin, vmax, deviation, threshold):
     return values, rest
 
 
-def decode_bounds_to_alignment(bounds):
+def decode_bounds_to_alignment(bounds, use_diff=True):
     bounds_step = bounds.cumsum(dim=1).round().long()
-    bounds_inc = torch.diff(
-        bounds_step, dim=1, prepend=torch.full(
-            (bounds.shape[0], 1), fill_value=-1,
-            dtype=bounds_step.dtype, device=bounds_step.device
-        )
-    ) > 0
+    if use_diff:
+        bounds_inc = torch.diff(
+            bounds_step, dim=1, prepend=torch.full(
+                (bounds.shape[0], 1), fill_value=-1,
+                dtype=bounds_step.dtype, device=bounds_step.device
+            )
+        ) > 0
+    else:
+        bounds_inc = F.pad((bounds_step[:, 1:] > bounds_step[:, :-1]), [1, 0], value=True)
     frame2item = bounds_inc.long().cumsum(dim=1)
     return frame2item
 
@@ -48,25 +51,25 @@ def decode_note_sequence(frame2item, values, masks, threshold=0.5):
     b = frame2item.shape[0]
     space = frame2item.max() + 1
 
-    item_dur = frame2item.new_zeros(b, space).scatter_add(
+    item_dur = frame2item.new_zeros(b, space, dtype=frame2item.dtype).scatter_add(
         1, frame2item, torch.ones_like(frame2item)
     )[:, 1:]
-    item_unmasked_dur = frame2item.new_zeros(b, space).scatter_add(
+    item_unmasked_dur = frame2item.new_zeros(b, space, dtype=frame2item.dtype).scatter_add(
         1, frame2item, masks.long()
     )[:, 1:]
     item_masks = item_unmasked_dur / item_dur >= threshold
 
     values_quant = values.round().long()
-    histogram = frame2item.new_zeros(b, space * 128).scatter_add(
+    histogram = frame2item.new_zeros(b, space * 128, dtype=frame2item.dtype).scatter_add(
         1, frame2item * 128 + values_quant, torch.ones_like(frame2item) * masks
     ).unflatten(1, [space, 128])[:, 1:, :]
-    item_values_center = histogram.argmax(dim=2).to(dtype=values.dtype)
+    item_values_center = histogram.float().argmax(dim=2).to(dtype=values.dtype)
     values_center = torch.gather(F.pad(item_values_center, [1, 0]), 1, frame2item)
     values_near_center = masks & (values >= values_center - 0.5) & (values <= values_center + 0.5)
-    item_valid_dur = frame2item.new_zeros(b, space).scatter_add(
+    item_valid_dur = frame2item.new_zeros(b, space, dtype=frame2item.dtype).scatter_add(
         1, frame2item, values_near_center.long()
     )[:, 1:]
-    item_values = values.new_zeros(b, space).scatter_add(
+    item_values = values.new_zeros(b, space, dtype=values.dtype).scatter_add(
         1, frame2item, values * values_near_center
     )[:, 1:] / (item_valid_dur + (item_valid_dur == 0))
 
