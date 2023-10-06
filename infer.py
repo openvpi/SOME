@@ -40,6 +40,7 @@ def infer(model, wav, midi, tempo):
 
     midi_path = pathlib.Path(midi) if midi is not None else wav_path.with_suffix('.mid')
     midi_file.save(midi_path)
+    print(f'MIDI file saved at: \'{midi_path}\'')
 
 
 if __name__ == '__main__':
