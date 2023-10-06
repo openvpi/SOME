@@ -20,7 +20,7 @@ midi_shift_range: [-12, 12]
 rest_threshold: 0.1
 
 midi_extractor_args:
-  output_lay: 3
+  output_lay: 2
   dim: 512
   kernel_size: 31
   conv_drop:  0.1
