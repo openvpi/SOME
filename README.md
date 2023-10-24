@@ -15,7 +15,7 @@ SOME is a MIDI extractor that can convert singing voice to MIDI sequence, with t
 
 ## Getting Started
 
-> 中文教程 / Chinese Tutorials: [Text](https://openvpi-docs.feishu.cn/wiki/space/7287575175590117378?ccm_open_type=lark_wiki_spaceLink), [Video](https://www.bilibili.com/video/BV1my4y1N7VR)
+> 中文教程 / Chinese Tutorials: [Text](https://openvpi-docs.feishu.cn/wiki/RaHSwdMQvisdcKkRFpqclhM7ndc), [Video](https://www.bilibili.com/video/BV1my4y1N7VR)
 
 ### Installation
 
