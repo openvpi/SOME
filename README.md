@@ -2,7 +2,7 @@
 SOME: Singing-Oriented MIDI Extractor.
 
 > WARNING
-> 
+>
 > This project is under beta version now. No backward compatibility is guaranteed.
 
 ## Overview
@@ -14,6 +14,8 @@ SOME is a MIDI extractor that can convert singing voice to MIDI sequence, with t
 3. Functionality: SOME can produce non-integer MIDI values, which is specially suitable for DiffSinger variance labeling.
 
 ## Getting Started
+
+> 中文教程 / Chinese Tutorials: [Text](https://openvpi-docs.feishu.cn/wiki/RaHSwdMQvisdcKkRFpqclhM7ndc), [Video](https://www.bilibili.com/video/BV1my4y1N7VR)
 
 ### Installation
 
