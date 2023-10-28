@@ -41,6 +41,7 @@ def train(config, exp_name, work_dir):
     work_dir.mkdir(parents=True, exist_ok=True)
     with open(work_dir / 'config.yaml', 'w', encoding='utf8') as f:
         yaml.safe_dump(config, f)
+    config.update({'work_dir': str(work_dir)})
 
     if config['ddp_backend'] == 'nccl_no_p2p':
         print("Disabling NCCL P2P")
