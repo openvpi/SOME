@@ -31,7 +31,7 @@ SOME requires Python 3.8 or later. We strongly recommend you create a virtual en
 
 3. (Optional) For better pitch extraction results, please download the RMVPE pretrained model from [here](https://github.com/yxlllc/RMVPE/releases) and extract it into `pretrained/` directory.
 
-### Inference via pretrained model
+### Inference via pretrained model (MIDI files)
 
 Download pretrained model of SOME from [releases](https://github.com/openvpi/SOME/releases) and extract them somewhere.
 
@@ -57,6 +57,24 @@ Then you can open the gradio interface through your browser and use the models u
 
 ```bash
 python webui.py --help
+```
+
+### Inference via pretrained model (DiffSinger dataset)
+
+Download pretrained model of SOME from [releases](https://github.com/openvpi/SOME/releases) and extract them somewhere.
+
+To use SOME for an existing DiffSinger dataset, you should have a transcriptions.csv with `name`, `ph_seq`, `ph_dur` and `ph_num` in it. Run the following command:
+
+```bash
+python batch_iner.py --model CKPT_PATH --dataset RAW_DATA_DIR --overwrite
+```
+
+This will use the model to get all MIDI sequences (with floating point pitch values) from the recordings in the dataset and **OVERWRITE** its transcriptions.csv with `note_seq` and `note_dur` added or replaced. Please be careful and back up your files if necessary.
+
+For more useful options, run
+
+```bash
+python batch_infer.py --help
 ```
 
 ### Training from scratch
