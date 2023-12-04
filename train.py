@@ -43,7 +43,7 @@ def train(config, exp_name, work_dir):
         yaml.safe_dump(config, f)
     config.update({'work_dir': str(work_dir)})
 
-    if config['ddp_backend'] == 'nccl_no_p2p':
+    if not config['nccl_p2p']:
         print("Disabling NCCL P2P")
         os.environ['NCCL_P2P_DISABLE'] = '1'
 
@@ -61,13 +61,7 @@ def train(config, exp_name, work_dir):
         accelerator=config['pl_trainer_accelerator'],
         devices=config['pl_trainer_devices'],
         num_nodes=config['pl_trainer_num_nodes'],
-        strategy=get_strategy(
-            accelerator=config['pl_trainer_accelerator'],
-            devices=config['pl_trainer_devices'],
-            num_nodes=config['pl_trainer_num_nodes'],
-            strategy=config['pl_trainer_strategy'],
-            backend=config['ddp_backend']
-        ),
+        strategy=get_strategy(config['pl_trainer_strategy']),
         precision=config['pl_trainer_precision'],
         callbacks=[
             DsModelCheckpoint(
