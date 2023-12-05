@@ -8,7 +8,6 @@ import lightning.pytorch as pl
 import numpy as np
 import torch
 from lightning.pytorch.callbacks import ModelCheckpoint, TQDMProgressBar
-from lightning.pytorch.strategies import DDPStrategy
 from lightning.pytorch.utilities.rank_zero import rank_zero_info
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data.distributed import Sampler
@@ -305,73 +304,16 @@ class DsTQDMProgressBar(TQDMProgressBar):
         return items
 
 
-def get_strategy(accelerator, devices, num_nodes, strategy, backend):
-    if accelerator != 'auto' and accelerator != 'gpu':
-        return strategy
+def get_strategy(strategy):
+    if strategy['name'] == 'auto':
+        return 'auto'
 
-    from lightning.fabric.utilities.imports import _IS_INTERACTIVE
-    from lightning.pytorch.accelerators import AcceleratorRegistry
-    from lightning.pytorch.accelerators.cuda import CUDAAccelerator
-    from lightning.pytorch.accelerators.hpu import HPUAccelerator
-    from lightning.pytorch.accelerators.ipu import IPUAccelerator
-    from lightning.pytorch.accelerators.mps import MPSAccelerator
-    from lightning.pytorch.accelerators.tpu import TPUAccelerator
-    from lightning.pytorch.utilities.exceptions import MisconfigurationException
+    from lightning.pytorch.strategies import StrategyRegistry
+    if strategy['name'] not in StrategyRegistry:
+        available_names = ", ".join(sorted(StrategyRegistry.keys())) or "none"
+        raise ValueError(f"Invalid strategy name {strategy['name']}. Available names: {available_names}")
 
-    def _choose_auto_accelerator():
-        if TPUAccelerator.is_available():
-            return "tpu"
-        if IPUAccelerator.is_available():
-            return "ipu"
-        if HPUAccelerator.is_available():
-            return "hpu"
-        if MPSAccelerator.is_available():
-            return "mps"
-        if CUDAAccelerator.is_available():
-            return "cuda"
-        return "cpu"
-
-    def _choose_gpu_accelerator_backend():
-        if MPSAccelerator.is_available():
-            return "mps"
-        if CUDAAccelerator.is_available():
-            return "cuda"
-        raise MisconfigurationException("No supported gpu backend found!")
-
-    if accelerator == "auto":
-        _accelerator_flag = _choose_auto_accelerator()
-    elif accelerator == "gpu":
-        _accelerator_flag = _choose_gpu_accelerator_backend()
-    else:
-        return strategy
-
-    if _accelerator_flag != "mps" and _accelerator_flag != "cuda":
-        return strategy
-
-    _num_nodes_flag = int(num_nodes) if num_nodes is not None else 1
-    _devices_flag = devices
-
-    accelerator = AcceleratorRegistry.get(_accelerator_flag)
-    accelerator_cls = accelerator.__class__
-
-    if _devices_flag == "auto":
-        _devices_flag = accelerator.auto_device_count()
-
-    _devices_flag = accelerator_cls.parse_devices(_devices_flag)
-    _parallel_devices = accelerator_cls.get_parallel_devices(_devices_flag)
-
-    def get_ddp_strategy(_backend):
-        if _backend == 'gloo':
-            return DDPStrategy(process_group_backend='gloo', find_unused_parameters=False)
-        elif _backend == 'nccl' or _backend == 'nccl_no_p2p':
-            return DDPStrategy(process_group_backend='nccl', find_unused_parameters=False)
-        else:
-            raise ValueError(f'backend {_backend} is not valid.')
-
-    if _num_nodes_flag > 1:
-        return get_ddp_strategy(backend)
-    if len(_parallel_devices) <= 1:
-        return strategy
-    if len(_parallel_devices) > 1 and _IS_INTERACTIVE:
-        return strategy
-    return get_ddp_strategy(backend)
+    data = StrategyRegistry[strategy['name']]
+    params = data['init_params']
+    params.update({k: v for k, v in strategy.items() if k != 'name'})
+    return data['strategy'](**utils.filter_kwargs(params, data['strategy']))
