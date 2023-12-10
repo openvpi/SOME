@@ -67,8 +67,9 @@ def infer(model_rel_path, input_audio_path, tempo_value):
 
 @click.command(help='Launch the web UI for inference')
 @click.option('--port', type=int, default=7860, help='Server port')
+@click.option('--addr', type=str, required=False, help='Server address')
 @click.option('--work_dir', type=str, required=False, help='Directory to read the experiments')
-def webui(port, work_dir):
+def webui(port, work_dir, addr):
     if work_dir is None:
         work_dir = pathlib.Path(__file__).with_name('experiments')
     else:
@@ -101,7 +102,7 @@ def webui(port, work_dir):
         ]
     )
     iface.queue(concurrency_count=10)
-    iface.launch(server_port=port)
+    iface.launch(server_port=port, server_name=addr)
 
 
 if __name__ == "__main__":
