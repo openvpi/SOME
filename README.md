@@ -66,7 +66,7 @@ Download pretrained model of SOME from [releases](https://github.com/openvpi/SOM
 To use SOME for an existing DiffSinger dataset, you should have a transcriptions.csv with `name`, `ph_seq`, `ph_dur` and `ph_num` in it. Run the following command:
 
 ```bash
-python batch_iner.py --model CKPT_PATH --dataset RAW_DATA_DIR --overwrite
+python batch_infer.py --model CKPT_PATH --dataset RAW_DATA_DIR --overwrite
 ```
 
 This will use the model to get all MIDI sequences (with floating point pitch values) from the recordings in the dataset and **OVERWRITE** its transcriptions.csv with `note_seq` and `note_dur` added or replaced. Please be careful and back up your files if necessary.
