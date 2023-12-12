@@ -7,4 +7,4 @@ WORKDIR /opt/app
 RUN pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt gradio==3.47.1
 COPY --from=downloader /home experiments
 EXPOSE 7860
-CMD [ "python", "webui.py","--addr=0.0.0.0" ]
+CMD [ "python", "webui.py", "--addr=0.0.0.0" ]
