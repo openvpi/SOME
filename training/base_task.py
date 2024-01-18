@@ -247,7 +247,7 @@ class BaseTask(pl.LightningModule):
         total_loss = sum(losses.values())
         return total_loss, {**losses, 'batch_size': float(sample['size'])}
 
-    def training_step(self, sample, batch_idx, optimizer_idx=-1):
+    def training_step(self, sample, batch_idx):
         total_loss, log_outputs = self._training_step(sample)
 
         # logs to progress bar
