@@ -8,6 +8,7 @@ binary_data_dir: data/some_ds_quant_spk4_aug8/binary
 binarization_args:
   num_workers: 0
   shuffle: true
+  skip_glide: true  # skip data with glide
   merge_rest: true  # merge continuous rest notes
   merge_slur: true  # merge slurs with the similar pitch
 use_bound_loss: true

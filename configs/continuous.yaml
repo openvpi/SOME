@@ -7,6 +7,7 @@ raw_data_dir: []
 binary_data_dir: null
 binarization_args:
   num_workers: 0
+  skip_glide: true  # skip data with glide
   merge_rest: true  # merge continuous rest notes
   merge_slur: true  # merge slurs with the similar pitch
   round_midi: false  # round midi value

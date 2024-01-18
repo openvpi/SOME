@@ -39,6 +39,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
     def __init__(self, config: dict):
         super().__init__(config, data_attrs=MIDI_EXTRACTION_ITEM_ATTRIBUTES)
         self.lr = LengthRegulator().to(self.device)
+        self.skip_glide = self.binarization_args['skip_glide']
         self.merge_rest = self.binarization_args['merge_rest']
         self.merge_slur = self.binarization_args['merge_slur']
         self.slur_tolerance = self.binarization_args.get('slur_tolerance')
@@ -60,6 +61,11 @@ class MIDIExtractionBinarizer(BaseBinarizer):
                     ds = json.load(f)
                     if isinstance(ds, list):
                         ds = ds[0]
+                if self.skip_glide and ds.get('note_glide') is not None and any(
+                        g != 'none' for g in ds['note_glide'].split()
+                ):
+                    print(f'Item {ds_id}:{item_name} contains glide notes. Skipping.')
+                    continue
                 # normalize
                 note_seq = [
                     librosa.midi_to_note(
