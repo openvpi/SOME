@@ -145,8 +145,7 @@ class BaseBinarizer:
             self.process_dataset('valid')
             self.process_dataset(
                 'train',
-                num_workers=int(self.binarization_args['num_workers']),
-                apply_augmentation=True
+                num_workers=int(self.binarization_args['num_workers'])
             )
         except KeyboardInterrupt:
             exit(-1)
@@ -154,41 +153,36 @@ class BaseBinarizer:
     def check_coverage(self):
         pass
 
-    def process_dataset(self, prefix, num_workers=0, apply_augmentation=False):
+    def process_dataset(self, prefix, num_workers=0):
         args = []
         builder = IndexedDatasetBuilder(self.binary_data_dir, prefix=prefix, allowed_attr=self.data_attrs)
         lengths = []
         total_sec = 0
-        total_raw_sec = 0
 
         for item_name, meta_data in self.meta_data_iterator(prefix):
-            args.append([item_name, meta_data, apply_augmentation])
+            args.append([item_name, meta_data])
 
-        def postprocess(_item, _is_raw=True):
-            nonlocal total_sec, total_raw_sec
+        def postprocess(_item):
+            nonlocal total_sec
             if _item is None:
                 return
             builder.add_item(_item)
             lengths.append(_item['length'])
             total_sec += _item['seconds']
-            if _is_raw:
-                total_raw_sec += _item['seconds']
 
         try:
             if num_workers > 0:
                 # code for parallel processing
-                for items in tqdm(
+                for item in tqdm(
                         chunked_multiprocess_run(self.process_item, args, num_workers=num_workers),
                         total=len(list(self.meta_data_iterator(prefix)))
                 ):
-                    for i, item in enumerate(items):
-                        postprocess(item, i == 0)
+                    postprocess(item)
             else:
                 # code for single cpu processing
                 for a in tqdm(args):
-                    items = self.process_item(*a)
-                    for i, item in enumerate(items):
-                        postprocess(item, i == 0)
+                    item = self.process_item(*a)
+                    postprocess(item)
         except KeyboardInterrupt:
             builder.finalize()
             raise
@@ -198,12 +192,7 @@ class BaseBinarizer:
             # noinspection PyTypeChecker
             np.save(f, lengths)
 
-        if apply_augmentation:
-            print(f'| {prefix} total duration (before augmentation): {total_raw_sec:.2f}s')
-            print(
-                f'| {prefix} total duration (after augmentation): {total_sec:.2f}s ({total_sec / total_raw_sec:.2f}x)')
-        else:
-            print(f'| {prefix} total duration: {total_raw_sec:.2f}s')
+        print(f'| {prefix} total duration: {total_sec:.2f}s')
 
-    def process_item(self, item_name, meta_data, allow_aug=False):
+    def process_item(self, item_name, meta_data):
         raise NotImplementedError()

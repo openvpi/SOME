@@ -14,8 +14,6 @@ audio_sample_rate: 44100
 fmin: 40
 fmax: 8000
 test_prefixes: []
-units_encoder: mel  # contentvec768l12
-units_encoder_ckpt: pretrained/contentvec/checkpoint_best_legacy_500.pt
 pe: rmvpe
 pe_ckpt: pretrained/rmvpe/model.pt
 
@@ -24,7 +22,7 @@ midi_min: 0
 midi_max: 127
 
 # neural networks
-units_dim: 80  # 768
+audio_num_mel_bins: 80
 midi_num_bins: 128
 model_cls: null
 midi_extractor_args: {}

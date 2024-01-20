@@ -1,3 +1,2 @@
 from .base_binarizer import BaseBinarizer
 from .me_binarizer import MIDIExtractionBinarizer
-from .me_quant_binarizer import QuantizedMIDIExtractionBinarizer

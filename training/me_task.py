@@ -31,9 +31,9 @@ class MIDIExtractionDataset(BaseDataset):
         batch['note_rest'] = collate_nd([s['note_rest'] for s in samples])  # [B, T_n]
         batch['note_dur'] = collate_nd([s['note_dur'] for s in samples])  # [B, T_n]
 
-        miu = self.midi_to_bin(batch['note_midi'])[:, :, None]  # [B, T_n, 1]
-        x = torch.arange(self.num_bins).float().reshape(1, 1, -1).to(miu.device)  # [1, 1, N]
-        probs = ((x - miu) / self.sigma).pow(2).div(-2).exp()  # gaussian blur, [B, T_n, N]
+        mu = self.midi_to_bin(batch['note_midi'])[:, :, None]  # [B, T_n, 1]
+        x = torch.arange(self.num_bins).float().reshape(1, 1, -1).to(mu.device)  # [1, 1, N]
+        probs = ((x - mu) / self.sigma).pow(2).div(-2).exp()  # gaussian blur, [B, T_n, N]
         note_mask = collate_nd([torch.ones_like(s['note_rest']) for s in samples], pad_value=False)
         probs *= (note_mask[..., None] & ~batch['note_rest'][..., None])
 

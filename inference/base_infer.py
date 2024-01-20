@@ -45,7 +45,7 @@ class BaseInference:
 
     def infer(self, waveforms: List[np.ndarray]) -> List[Dict[str, np.ndarray]]:
         results = []
-        for w in tqdm.tqdm(waveforms):
+        for w in tqdm.tqdm(waveforms, leave=False):
             model_in = self.preprocess(w)
             model_out = self.forward_model(model_in)
             res = self.postprocess(model_out)

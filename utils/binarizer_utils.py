@@ -10,7 +10,7 @@ from utils.pitch_utils import interp_f0
 
 def merge_slurs(note_seq: list, note_dur: list, note_slur: list, tolerance=None) -> Tuple[list, list]:
     """
-    merge slurs with the similar pitch
+    (Deprecated) merge slurs with the similar pitch
     """
     note_midi = [librosa.note_to_midi(n, round_midi=False) if n != 'rest' else 'rest' for n in note_seq]
     prev_min = prev_max = None
@@ -50,14 +50,16 @@ def merge_slurs(note_seq: list, note_dur: list, note_slur: list, tolerance=None)
     return note_seq_merge_slur, note_dur_merge_slur
 
 
-def merge_rests(note_seq: list, note_dur: list) -> Tuple[list, list]:
+def merge_rests(note_seq: list, note_dur: list, note_slur: list) -> Tuple[list, list, list]:
     i = 0
     note_seq_merge_rest = []
     note_dur_merge_rest = []
+    note_slur_merge_rest = []
     while i < len(note_seq):
         if note_seq[i] != 'rest':
             note_seq_merge_rest.append(note_seq[i])
             note_dur_merge_rest.append(note_dur[i])
+            note_slur_merge_rest.append(note_slur[i])
             i += 1
         else:
             j = i
@@ -67,8 +69,9 @@ def merge_rests(note_seq: list, note_dur: list) -> Tuple[list, list]:
                 j += 1
             note_seq_merge_rest.append('rest')
             note_dur_merge_rest.append(rest_dur)
+            note_slur_merge_rest.append(False)
             i = j
-    return note_seq_merge_rest, note_dur_merge_rest
+    return note_seq_merge_rest, note_dur_merge_rest, note_slur_merge_rest
 
 
 @torch.no_grad()
