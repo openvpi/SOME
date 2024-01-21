@@ -150,7 +150,7 @@ class MIDIExtractionBinarizer(BaseBinarizer):
                 n_mel_channels=self.config['audio_num_mel_bins'],
                 sampling_rate=self.config['audio_sample_rate'],
                 win_length=self.config['win_size'], hop_length=self.config['hop_size'],
-                mel_fmin=self.config['fmin'], mel_fmax=self.config['fmax']
+                mel_fmin=self.config['fmin'], mel_fmax=self.config['fmax'], clamp=1e-9
             ).to(self.device)
         mel = mel_spec(wav_tensor.unsqueeze(0)).transpose(1, 2).squeeze(0).cpu().numpy()
         length = mel.shape[0]

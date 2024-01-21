@@ -1,9 +1,13 @@
+import math
+import random
+
 import torch
 import torch.nn.functional as F
 from torch import nn
 
 import modules.losses
 import modules.metrics
+import modules.rmvpe
 from utils import build_object_from_class_name, collate_nd
 from utils.infer_utils import decode_gaussian_blurred_probs, decode_bounds_to_alignment, decode_note_sequence
 from utils.plot import boundary_to_figure, curve_to_figure, spec_to_figure, pitch_notes_to_figure
@@ -13,6 +17,15 @@ from .base_task import BaseDataset, BaseTask
 class MIDIExtractionDataset(BaseDataset):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.mel_spectrogram = modules.rmvpe.MelSpectrogram(
+            n_mel_channels=self.config['audio_num_mel_bins'],
+            sampling_rate=self.config['audio_sample_rate'],
+            win_length=self.config['win_size'], hop_length=self.config['hop_size'],
+            mel_fmin=self.config['fmin'], mel_fmax=self.config['fmax'], clamp=1e-9
+        )
+        self.key_shift_prob = self.config['key_shift_prob']
+        self.key_shift_min, self.key_shift_max = self.config['key_shift_range']
+        self.loudness_scale_prob = self.config['loudness_scale_prob']
         self.midi_min = self.config['midi_min']
         self.midi_max = self.config['midi_max']
         self.num_bins = self.config['midi_num_bins']
@@ -20,13 +33,33 @@ class MIDIExtractionDataset(BaseDataset):
         self.interval = (self.midi_max - self.midi_min) / (self.num_bins - 1)  # align with centers of bins
         self.sigma = self.midi_deviation / self.interval
 
+    def __getitem__(self, index):
+        sample = super().__getitem__(index)
+        waveform = sample['waveform']
+        mel = sample['mel']
+        if self.allow_aug:
+            # pitch shifting
+            if random.random() < self.key_shift_prob:
+                pitch_shift = random.random() * (self.key_shift_max - self.key_shift_min) + self.key_shift_min
+                sample['note_midi'] += pitch_shift
+                mel = self.mel_spectrogram(
+                    waveform.unsqueeze(0), keyshift=pitch_shift
+                ).transpose(1, 2).squeeze(0)
+            # loudness scaling
+            if random.random() < self.loudness_scale_prob:
+                max_amp = waveform.abs().max() + 1e-5
+                max_shift = min(3, math.log(1 / max_amp))
+                log_mel_shift = random.uniform(-3, max_shift)
+                mel = mel + log_mel_shift
+        sample['mel'] = torch.clamp(mel, min=1e-5)
+        return sample
+
     def midi_to_bin(self, midi):
         return (midi - self.midi_min) / self.interval
 
     def collater(self, samples):
         batch = super().collater(samples)
-        batch['units'] = collate_nd([s['units'] for s in samples])  # [B, T_s, C]
-        batch['pitch'] = collate_nd([s['pitch'] for s in samples])  # [B, T_s]
+        batch['mel'] = collate_nd([s['mel'] for s in samples])  # [B, T_s, C]
         batch['note_midi'] = collate_nd([s['note_midi'] for s in samples])  # [B, T_n]
         batch['note_rest'] = collate_nd([s['note_rest'] for s in samples])  # [B, T_n]
         batch['note_dur'] = collate_nd([s['note_dur'] for s in samples])  # [B, T_n]
