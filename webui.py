@@ -62,7 +62,7 @@ def infer(model_rel_path, input_audio_path, tempo_value):
     midi_file.save(output_midi_path)
     os.remove(input_audio_path)
 
-    return output_midi_path, f"Cost {round(infer_time, 2)} s, RTF: {round(rtf, 3)}"
+    return str(output_midi_path), f"Cost {round(infer_time, 2)} s, RTF: {round(rtf, 3)}"
 
 
 @click.command(help='Launch the web UI for inference')
@@ -101,7 +101,7 @@ def webui(port, work_dir, addr):
             gr.components.Label(label="Inference Statistics"),
         ]
     )
-    iface.queue(concurrency_count=10)
+    iface.queue(max_size=10)
     iface.launch(server_port=port, server_name=addr)
 
 
