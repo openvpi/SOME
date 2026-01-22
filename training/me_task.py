@@ -51,7 +51,7 @@ class MIDIExtractionDataset(BaseDataset):
                 max_shift = min(3, math.log(1 / max_amp))
                 log_mel_shift = random.uniform(-3, max_shift)
                 mel = mel + log_mel_shift
-        sample['mel'] = torch.clamp(mel, min=1e-5)
+        sample['mel'] = torch.clamp(mel, min=math.log(1e-5))
         return sample
 
     def midi_to_bin(self, midi):
